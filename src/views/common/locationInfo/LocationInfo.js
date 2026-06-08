@@ -1298,7 +1298,7 @@
 
 
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Card,
   CardContent,
@@ -1327,7 +1327,7 @@ import {
 } from '@mui/icons-material';
 import Map from '../../../assets/images/blueprints/cdlplc.png';
 import Serverroom from '../../../assets/locationType/serverroom.jpg';
-import { Building, Monitor, Wifi } from 'lucide-react';
+import { Building, Monitor, Wifi, WifiOff } from 'lucide-react';
 import NetworkView from '../../../components/dashboards/locationInfo/NetworkView';
 import { Tooltip } from '@mui/material';
 import { useDispatch } from 'react-redux';
@@ -1397,6 +1397,43 @@ const PortNavigationApp = () => {
   const [showSwitches, setShowSwitches] = useState(false);
   const [showPrinters, setShowPrinters] = useState(false);
   const [showUps, setShowUps] = useState(false);
+  const [allSectorsData, setAllSectorsData] = useState([]);
+
+  useEffect(() => {
+    const fetchSectors = async () => {
+      try {
+        const response = await fetch('http://10.0.13.48:8088/ICTDevice/GetHeadBulid', {
+          method: 'GET',
+          headers: {
+            Accept: 'application/json',
+          },
+        });
+        if (response.ok) {
+          const data = await response.json();
+          if (data.StatusCode === 200 && data.ResultSet) {
+            setAllSectorsData(data.ResultSet);
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching sectors data on mount:', error);
+      }
+    };
+
+    fetchSectors();
+  }, []);
+
+  const getDockStats = (dockId) => {
+    const dockSectors = allSectorsData.filter((sector) => sector.Build_Code === dockId);
+    let totalCount = 0;
+    let activeCount = 0;
+
+    dockSectors.forEach((sector) => {
+      totalCount += Number(sector.ComputerCount || 0);
+      activeCount += Number(sector.ActiveCount !== undefined ? sector.ActiveCount : (sector.ComputerCount || 0));
+    });
+
+    return { totalCount, activeCount };
+  };
 
   const docks = [
     {
@@ -2314,13 +2351,24 @@ const PortNavigationApp = () => {
                   <Tooltip
                     key={dock.id}
                     title={
-                      <Box>
-                        <Typography variant="subtitle2" fontWeight="bold">
+                      <Box sx={{ p: 1 }}>
+                        <Typography variant="subtitle2" fontWeight="bold" sx={{ color: '#fff', mb: 0.5 }}>
                           {dock.name}
                         </Typography>
                         {dock.description && (
-                          <Typography variant="body2">{dock.description}</Typography>
+                          <Typography variant="body2" sx={{ color: '#ccc', mb: 1 }}>
+                            {dock.description}
+                          </Typography>
                         )}
+                        <Typography variant="body2" sx={{ color: '#fff', mb: 0.5 }}>
+                          Total Devices: {getDockStats(dock.id).totalCount}
+                        </Typography>
+                        <Typography variant="body2" sx={{ color: '#4ade80', mb: 0.5 }}>
+                          Active: {getDockStats(dock.id).activeCount}
+                        </Typography>
+                        <Typography variant="body2" sx={{ color: '#ef4444' }}>
+                          Inactive: {getDockStats(dock.id).totalCount - getDockStats(dock.id).activeCount}
+                        </Typography>
                       </Box>
                     }
                     arrow
@@ -2334,9 +2382,13 @@ const PortNavigationApp = () => {
                       sx={{
                         color: '#fff',
                         backgroundColor: isHovered
-                          ? 'rgba(255,0,0,0.6)'
+                          ? '#1565c0'
                           : isSelected
                           ? '#ff9800'
+                          : (getDockStats(dock.id).totalCount - getDockStats(dock.id).activeCount) > 0 // Highlight red if inactive exists
+                          ? '#f44336'
+                          : getDockStats(dock.id).activeCount > 0 // Highlight green if active exists
+                          ? '#4caf50'
                           : '#1976d2',
                         position: 'absolute',
                         left: dock.x,
@@ -2346,16 +2398,45 @@ const PortNavigationApp = () => {
                           : 'translate(-50%, -50%) scale(1)',
                         zIndex: isSelected ? 20 : 10,
                         boxShadow: isHovered
-                          ? '0 0 12px 14px rgba(255,0,0,0.6)'
+                          ? '0 0 12px 14px rgba(25, 118, 210, 0.4)'
                           : isSelected
                           ? '0 4px 16px rgba(0,0,0,0.4)'
                           : '0 2px 8px rgba(0,0,0,0.3)',
                         transition: 'all 0.3s ease',
                         cursor: 'pointer',
+                        '@keyframes pulseRed': {
+                          '0%': {
+                            boxShadow: '0 0 0 0 rgba(244, 67, 54, 0.7)',
+                          },
+                          '70%': {
+                            boxShadow: '0 0 0 10px rgba(244, 67, 54, 0)',
+                          },
+                          '100%': {
+                            boxShadow: '0 0 0 0 rgba(244, 67, 54, 0)',
+                          },
+                        },
+                        '@keyframes pulseGreen': {
+                          '0%': {
+                            boxShadow: '0 0 0 0 rgba(76, 175, 80, 0.7)',
+                          },
+                          '70%': {
+                            boxShadow: '0 0 0 10px rgba(76, 175, 80, 0)',
+                          },
+                          '100%': {
+                            boxShadow: '0 0 0 0 rgba(76, 175, 80, 0)',
+                          },
+                        },
+                        animation: !isSelected && !isHovered
+                          ? (getDockStats(dock.id).totalCount - getDockStats(dock.id).activeCount) > 0
+                            ? 'pulseRed 2s infinite'
+                            : getDockStats(dock.id).activeCount > 0
+                            ? 'pulseGreen 2s infinite'
+                            : 'none'
+                          : 'none',
                         '&:hover': {
                           transform: 'translate(-50%, -50%) scale(1.4)',
-                          backgroundColor: 'red',
-                          boxShadow: '0 0 12px 14px rgba(255,0,0,0.6)',
+                          backgroundColor: '#1565c0',
+                          boxShadow: '0 0 12px 14px rgba(25, 118, 210, 0.4)',
                         },
                       }}
                     >
@@ -2856,7 +2937,7 @@ const PortNavigationApp = () => {
                       </Box>
 
                       <Typography variant="h6" align="center" color="white" gutterBottom>
-                        {(floor.DisplayName === '0' || /^[A-Za-z]/.test(floor.DisplayName)) ? 'Ground Floor': floor.DisplayName}
+                        {(floor.DisplayName === '0' || /^[A-Za-z]/.test(floor.DisplayName)) ? 'Ground Floor' : floor.DisplayName}
                       </Typography>
 
                       {/* Counts */}
@@ -2881,6 +2962,18 @@ const PortNavigationApp = () => {
                         </Box>
                         <Typography variant="body2" color="#4ade80">
                           {activeCount}
+                        </Typography>
+                      </Box>
+
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <WifiOff size={16} color="#ef4444" />
+                          <Typography variant="body2" color="#ef4444">
+                            Inactive
+                          </Typography>
+                        </Box>
+                        <Typography variant="body2" color="#ef4444">
+                          {totalCount - activeCount}
                         </Typography>
                       </Box>
 
