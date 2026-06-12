@@ -525,8 +525,11 @@ import {
   Grid,
   Divider,
   CircularProgress,
+  Chip,
+  Tooltip,
 } from '@mui/material';
 import { ArrowBack, Computer, Print, Storage } from '@mui/icons-material';
+import DeviceInfoService from '../../../store/services/common/deviceInfo/DeviceInfoService';
 
 // Zoomable Image Component
 const ZoomableImage = ({ src, alt }) => {
@@ -576,27 +579,79 @@ const NetworkView = ({
   const [layoutImage, setLayoutImage] = useState(null);
   const [loadingImage, setLoadingImage] = useState(false);
   const [imageError, setImageError] = useState(false);
+  // devicePingStatus: { [ipAddress]: 'up' | 'down' | 'loading' }
+  const [devicePingStatus, setDevicePingStatus] = useState({});
 
   const serverPos = { left: '10%', top: '50%' };
 
-  // 🔹 Fetch devices
+  // 🔹 Fetch devices then ping each one
   useEffect(() => {
     if (!selectedSector?.Flo_No || !selectedSector?.Cat_CodeB) return;
 
-    const fetchDevices = async () => {
+    /**
+     * Returns true if the DoPinOne response indicates the device is DOWN.
+     * Uses broad case-insensitive matching so "Ping Failed", "ping failed",
+     * "Host unreachable", etc. are all caught.
+     */
+    const isPingDown = (pingResult) => {
+      // If the HTTP-level result code is not 200, treat as down
+      if (pingResult.StatusCode !== 200) return true;
+
+      const resultStr = (pingResult.Result || '').toLowerCase();
+      const resultSetStatus = (pingResult.ResultSet?.Status || '').toLowerCase();
+
+      // Explicit success keywords — if any match, device is UP
+      const successKeywords = ['success', 'reachable', 'alive', ' up', 'online'];
+      const isSuccess = successKeywords.some((kw) => resultStr.includes(kw));
+      if (isSuccess) return false;
+
+      // Explicit failure keywords — if any match, device is DOWN
+      const failKeywords = ['fail', 'down', 'unreachable', 'timeout', 'error', 'not reachable', 'false'];
+      const isFail = failKeywords.some((kw) => resultStr.includes(kw)) ||
+        failKeywords.some((kw) => resultSetStatus.includes(kw)) ||
+        pingResult.ResultSet?.IsAlive === false;
+      if (isFail) return true;
+
+      // If Result is empty or unrecognised, treat as down (safe default)
+      return !resultStr;
+    };
+
+    const fetchAndPingDevices = async () => {
       try {
         const res = await fetch(
           `http://10.0.13.48:8088/ICTDevice/GetComDetails?loccode=${selectedSector.Flo_No}&catcodea=${selectedSector.Cat_CodeB}`,
-          // `http://localhost:51324/ICTDevice/GetComDetails?loccode=${selectedSector.Flo_No}&catcodea=${selectedSector.Cat_CodeB}`,
         );
         const data = await res.json();
-        setNetworkDevices(data.ResultSet || []);
+        const devices = data.ResultSet || [];
+        setNetworkDevices(devices);
+
+        // Mark all as loading
+        const initStatus = {};
+        devices.forEach((d) => {
+          const ip = d.IP_Addres || d.Com_IP || d.ip || d.IpAddress;
+          if (ip) initStatus[ip] = 'loading';
+        });
+        setDevicePingStatus(initStatus);
+
+        // Ping each device using DoPinOne
+        for (const device of devices) {
+          const ip = device.IP_Addres || device.Com_IP || device.ip || device.IpAddress;
+          if (!ip) continue;
+          try {
+            const pingResult = await DeviceInfoService.DoPinOne(ip);
+            const isDown = isPingDown(pingResult);
+            setDevicePingStatus((prev) => ({ ...prev, [ip]: isDown ? 'down' : 'up' }));
+          } catch (err) {
+            console.warn(`[DoPinOne] ${ip} threw:`, err);
+            setDevicePingStatus((prev) => ({ ...prev, [ip]: 'down' }));
+          }
+        }
       } catch (err) {
         console.error('Error fetching devices:', err);
       }
     };
 
-    fetchDevices();
+    fetchAndPingDevices();
   }, [selectedSector]);
 
   const handleOpenImage = async () => {
@@ -674,6 +729,17 @@ const NetworkView = ({
     }
   };
 
+  // Determine live ping status for a device
+  const getDevicePingStatus = (device) => {
+    const ip = device.IP_Addres || device.Com_IP || device.ip || device.IpAddress;
+    if (!ip) return 'unknown';
+    return devicePingStatus[ip] || 'unknown';
+  };
+
+  const activeDevices = networkDevices.filter((d) => getDevicePingStatus(d) === 'up').length;
+  const downDevices = networkDevices.filter((d) => getDevicePingStatus(d) === 'down').length;
+  const loadingDevices = networkDevices.filter((d) => getDevicePingStatus(d) === 'loading').length;
+
   const handleDeviceClick = (device) => {
     setSelectedDevice(device);
     setOpenDetails(true);
@@ -681,71 +747,139 @@ const NetworkView = ({
 
   const DeviceNode = ({ device }) => {
     const isPrinter = (device.Com_Type || '').toLowerCase().includes('printer');
+    const pingStatus = getDevicePingStatus(device);
+    const isDown = pingStatus === 'down';
+    const isLoading = pingStatus === 'loading';
+
+    // Indicator dot color: red if down, blinking grey if loading, green if up
+    const indicatorColor = isDown ? '#ef4444' : isLoading ? '#9ca3af' : '#10b981';
+    // Icon background: dim red tint if down
+    const iconBg = isDown
+      ? 'linear-gradient(135deg, #7f1d1d, #ef444488)'
+      : 'linear-gradient(135deg, #3b82f6, #3b82f688)';
+
     return (
-      <Box
-        onClick={() => handleDeviceClick(device)}
-        sx={{
-          position: 'absolute',
-          top: device.position.top,
-          left: device.position.left,
-          transform: `translate(-50%, -50%) scale(${device.scale})`,
-          transformOrigin: 'center',
-          cursor: 'pointer',
-          '&:hover': {
-            transform: `translate(-50%, -50%) scale(${device.scale * 1.1})`,
-            zIndex: 1000,
-          },
-        }}
-      >
-        <Box
-          sx={{
-            borderRadius: 2,
-            p: 1.5,
-            minWidth: 120,
-            textAlign: 'center',
-            backdropFilter: 'blur(10px)',
-          }}
-        >
-          <Box sx={{ display: 'inline-block', mb: 1, position: 'relative' }}>
-            <Box
+      <Tooltip
+        title={
+          <Box>
+            <Typography variant="body2" fontWeight="bold">
+              {device.ComputerName || device.ComputerCode}
+            </Typography>
+            <Typography variant="caption" display="block">
+              IP: {device.IP_Addres || device.Com_IP || device.ip || device.IpAddress || 'N/A'}
+            </Typography>
+            <Typography
+              variant="caption"
+              display="block"
               sx={{
-                width: 48,
-                height: 48,
-                background: `linear-gradient(135deg, #3b82f6, #3b82f688)`,
-                borderRadius: 2,
-                display: 'flex',
-                justifyContent: 'center',
-                alignItems: 'center',
-                mx: 'auto',
+                color: isDown ? '#ff6b6b' : isLoading ? '#d1d5db' : '#4ade80',
+                fontWeight: 'bold',
               }}
             >
-              {isPrinter ? (
-                <Print sx={{ color: 'white', fontSize: 24 }} />
-              ) : (
-                <Computer sx={{ color: 'white', fontSize: 24 }} />
-              )}
-            </Box>
-            <Box
-              sx={{
-                position: 'absolute',
-                top: -4,
-                right: -4,
-                width: 16,
-                height: 16,
-                background: getStatusColor(device.Status),
-                borderRadius: '50%',
-                border: '2px solid white',
-              }}
-            />
+              Ping: {isDown ? '🔴 Inactive (Device Down)' : isLoading ? '⏳ Checking...' : '🟢 Active'}
+            </Typography>
           </Box>
-          <Typography variant="caption" color="white" fontWeight="bold" display="block">
-            {device.ComputerName || device.ComputerCode}
-          </Typography>
-          <Typography variant="caption" color="primary.light" display="block">
-            {device.Com_Type || (isPrinter ? 'Printer' : 'PC')}
-          </Typography>
+        }
+        arrow
+        placement="top"
+      >
+        <Box
+          onClick={() => handleDeviceClick(device)}
+          sx={{
+            position: 'absolute',
+            top: device.position.top,
+            left: device.position.left,
+            transform: `translate(-50%, -50%) scale(${device.scale})`,
+            transformOrigin: 'center',
+            cursor: 'pointer',
+            opacity: isDown ? 0.75 : 1,
+            '&:hover': {
+              transform: `translate(-50%, -50%) scale(${device.scale * 1.1})`,
+              zIndex: 1000,
+              opacity: 1,
+            },
+            transition: 'opacity 0.3s ease',
+          }}
+        >
+          <Box
+            sx={{
+              borderRadius: 2,
+              p: 1.5,
+              minWidth: 120,
+              textAlign: 'center',
+              backdropFilter: 'blur(10px)',
+              border: isDown ? '1px solid rgba(239,68,68,0.5)' : '1px solid transparent',
+              background: isDown ? 'rgba(127,29,29,0.2)' : 'transparent',
+              borderRadius: 2,
+            }}
+          >
+            <Box sx={{ display: 'inline-block', mb: 1, position: 'relative' }}>
+              <Box
+                sx={{
+                  width: 48,
+                  height: 48,
+                  background: iconBg,
+                  borderRadius: 2,
+                  display: 'flex',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  mx: 'auto',
+                }}
+              >
+                {isPrinter ? (
+                  <Print sx={{ color: isDown ? '#fca5a5' : 'white', fontSize: 24 }} />
+                ) : (
+                  <Computer sx={{ color: isDown ? '#fca5a5' : 'white', fontSize: 24 }} />
+                )}
+              </Box>
+              {/* Live ping status indicator dot */}
+              <Box
+                sx={{
+                  position: 'absolute',
+                  top: -4,
+                  right: -4,
+                  width: 16,
+                  height: 16,
+                  background: indicatorColor,
+                  borderRadius: '50%',
+                  border: '2px solid white',
+                  animation: isLoading ? 'blink 1s infinite' : 'none',
+                  '@keyframes blink': {
+                    '0%, 100%': { opacity: 1 },
+                    '50%': { opacity: 0.3 },
+                  },
+                }}
+              />
+            </Box>
+            <Typography
+              variant="caption"
+              fontWeight="bold"
+              display="block"
+              sx={{ color: isDown ? '#fca5a5' : 'white' }}
+            >
+              {device.ComputerName || device.ComputerCode}
+            </Typography>
+            <Typography variant="caption" color="primary.light" display="block">
+              {device.Com_Type || (isPrinter ? 'Printer' : 'PC')}
+            </Typography>
+            {/* Inactive badge */}
+            {isDown && (
+              <Chip
+                label="Inactive"
+                size="small"
+                sx={{
+                  mt: 0.5,
+                  height: 16,
+                  fontSize: '9px',
+                  backgroundColor: 'rgba(239,68,68,0.8)',
+                  color: 'white',
+                  fontWeight: 'bold',
+                }}
+              />
+            )}
+          </Box>
         </Box>
-      </Box>
+      </Tooltip>
     );
   };
 
@@ -858,14 +992,35 @@ const NetworkView = ({
         </Box>
 
         {/* Summary */}
-        <Grid container spacing={2} justifyContent="center" marginTop='2px'>
+        <Grid container spacing={2} justifyContent="center" alignItems="center" marginTop='2px'>
           <Grid item>
-             <Button
-              variant="contained"         
-            >
-              Total Devices: {networkDevices.length}
+            <Button variant="contained" sx={{ bgcolor: '#1976d2' }}>
+              Total: {networkDevices.length}
             </Button>
           </Grid>
+          {/* <Grid item>
+            <Button
+              variant="contained"
+              sx={{ bgcolor: '#4caf50', '&:hover': { bgcolor: '#388e3c' } }}
+            >
+              🟢 Active: {activeDevices}
+            </Button>
+          </Grid> */}
+          {/* <Grid item>
+            <Button
+              variant="contained"
+              sx={{ bgcolor: '#f44336', '&:hover': { bgcolor: '#c62828' } }}
+            >
+              🔴 Inactive: {downDevices}
+            </Button>
+          </Grid> */}
+          {loadingDevices > 0 && (
+            <Grid item>
+              <Button variant="outlined" disabled>
+                ⏳ Checking: {loadingDevices}
+              </Button>
+            </Grid>
+          )}
           <Grid item>
             <Button
               variant="contained"

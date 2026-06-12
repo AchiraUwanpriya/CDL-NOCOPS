@@ -1298,7 +1298,7 @@
 
 
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Card,
   CardContent,
@@ -1343,6 +1343,7 @@ import Switches from '../../../assets/images/icons/switches.ico';
 import SearchIcon from '@mui/icons-material/Search';
 import CloseIcon from '@mui/icons-material/Close';
 import UpsIcon from '../../../assets/images/icons/ups.ico';
+import DeviceInfoService from '../../../store/services/common/deviceInfo/DeviceInfoService';
 const ZoomableImage = ({ src, alt }) => {
   const [transformOrigin, setTransformOrigin] = useState('center center');
   const handleMouseMove = (e) => {
@@ -1399,6 +1400,9 @@ const PortNavigationApp = () => {
   const [showUps, setShowUps] = useState(false);
   const [allSectorsData, setAllSectorsData] = useState([]);
 
+  // locationPingStatus: { [dockId]: 'up' | 'down' | 'loading' | 'unknown' }
+  const [locationPingStatus, setLocationPingStatus] = useState({});
+
   useEffect(() => {
     const fetchSectors = async () => {
       try {
@@ -1412,6 +1416,8 @@ const PortNavigationApp = () => {
           const data = await response.json();
           if (data.StatusCode === 200 && data.ResultSet) {
             setAllSectorsData(data.ResultSet);
+            // Trigger ping checks after loading sector data
+            pingAllLocations(data.ResultSet);
           }
         }
       } catch (error) {
@@ -1421,6 +1427,141 @@ const PortNavigationApp = () => {
 
     fetchSectors();
   }, []);
+
+  /**
+   * Returns true if the DoPinOne response indicates the device is DOWN.
+   * Uses broad case-insensitive matching so "Ping Failed", "ping failed",
+   * "Host unreachable", etc. are all caught correctly.
+   */
+  const isPingDown = (pingResult) => {
+    if (pingResult.StatusCode !== 200) return true;
+
+    const resultStr = (pingResult.Result || '').toLowerCase();
+    const resultSetStatus = (pingResult.ResultSet?.Status || '').toLowerCase();
+
+    // Explicit success keywords — if any match, device is UP
+    const successKeywords = ['success', 'reachable', 'alive', ' up', 'online'];
+    const isSuccess = successKeywords.some((kw) => resultStr.includes(kw));
+    if (isSuccess) return false;
+
+    // Explicit failure keywords — if any match, device is DOWN
+    const failKeywords = ['fail', 'down', 'unreachable', 'timeout', 'error', 'not reachable', 'false'];
+    const isFail =
+      failKeywords.some((kw) => resultStr.includes(kw)) ||
+      failKeywords.some((kw) => resultSetStatus.includes(kw)) ||
+      pingResult.ResultSet?.IsAlive === false;
+    if (isFail) return true;
+
+    // If Result is empty or unrecognised, treat as down (safe default)
+    return !resultStr;
+  };
+
+  /**
+   * For each building, fetch its devices via GetComDetails and ping each device IP
+   * using DoPinOne. If any device is down, mark the location as 'down' (red).
+   */
+  const pingAllLocations = async (sectorsData) => {
+    if (!sectorsData || sectorsData.length === 0) return;
+
+    // Group sectors by Build_Code to get unique buildings
+    const buildingMap = {};
+    sectorsData.forEach((sector) => {
+      if (!buildingMap[sector.Build_Code]) {
+        buildingMap[sector.Build_Code] = [];
+      }
+      buildingMap[sector.Build_Code].push(sector);
+    });
+
+    const buildingIds = Object.keys(buildingMap);
+
+    // Mark all as loading initially
+    const initialStatus = {};
+    buildingIds.forEach((id) => {
+      initialStatus[id] = 'loading';
+    });
+    setLocationPingStatus(initialStatus);
+
+    // Process each building in parallel
+    buildingIds.forEach(async (buildCode) => {
+      const sectors = buildingMap[buildCode];
+
+      try {
+        // Run all sectors for this building in parallel
+        const sectorResults = await Promise.all(
+          sectors.map(async (sector) => {
+            if (!sector.Flo_No || !sector.Cat_CodeB) return { hasDevice: false, hasDown: false };
+
+            try {
+              const devResponse = await fetch(
+                `http://10.0.13.48:8088/ICTDevice/GetComDetails?loccode=${sector.Flo_No}&catcodea=${sector.Cat_CodeB}`,
+                { method: 'GET', headers: { Accept: 'application/json' } }
+              );
+
+              if (!devResponse.ok) return { hasDevice: false, hasDown: false };
+              const devData = await devResponse.json();
+
+              if (devData.StatusCode === 200 && devData.ResultSet && devData.ResultSet.length > 0) {
+                const devices = devData.ResultSet;
+
+                // Ping all devices in this sector in parallel
+                const pingPromises = devices.map(async (device) => {
+                  const ipAddress = device.IP_Addres || device.Com_IP || device.ip || device.IpAddress;
+                  if (!ipAddress) return { ip: null, isDown: true };
+
+                  try {
+                    const pingResult = await DeviceInfoService.DoPinOne(ipAddress);
+                    return { ip: ipAddress, isDown: isPingDown(pingResult) };
+                  } catch (err) {
+                    console.warn(`[LocationMap DoPinOne] ${ipAddress} failed:`, err);
+                    return { ip: ipAddress, isDown: true };
+                  }
+                });
+
+                const pingResults = await Promise.all(pingPromises);
+                const sectorTotal = devices.length;
+                const sectorDown = pingResults.filter((r) => r.isDown).length;
+                const sectorActive = sectorTotal - sectorDown;
+
+                // Update this sector's counts in allSectorsData
+                setAllSectorsData((prevSectors) =>
+                  prevSectors.map((s) => {
+                    if (s.Flo_No === sector.Flo_No && s.Cat_CodeB === sector.Cat_CodeB) {
+                      return {
+                        ...s,
+                        ComputerCount: sectorTotal,
+                        ActiveCount: sectorActive,
+                      };
+                    }
+                    return s;
+                  })
+                );
+
+                return {
+                  hasDevice: true,
+                  hasDown: sectorDown > 0,
+                };
+              }
+            } catch (sectorErr) {
+              console.warn(`Error fetching/pinging devices for sector ${sector.Flo_No}:`, sectorErr);
+            }
+            return { hasDevice: false, hasDown: false };
+          })
+        );
+
+        // Determine building status from sector results
+        const hasAnyDevice = sectorResults.some((r) => r.hasDevice);
+        const hasAnyDown = sectorResults.some((r) => r.hasDown);
+
+        setLocationPingStatus((prev) => ({
+          ...prev,
+          [buildCode]: hasAnyDevice ? (hasAnyDown ? 'down' : 'up') : 'unknown',
+        }));
+      } catch (err) {
+        console.warn(`Error pinging location ${buildCode}:`, err);
+        setLocationPingStatus((prev) => ({ ...prev, [buildCode]: 'unknown' }));
+      }
+    });
+  };
 
   const getDockStats = (dockId) => {
     const dockSectors = allSectorsData.filter((sector) => sector.Build_Code === dockId);
@@ -1433,6 +1574,33 @@ const PortNavigationApp = () => {
     });
 
     return { totalCount, activeCount };
+  };
+
+  /**
+   * Returns the marker color for a dock based on DoPinOne ping results.
+   * - 'down'    → red  (#f44336)
+   * - 'up'      → green (#4caf50)
+   * - 'loading' → blue (default)
+   * - 'unknown' → blue (default)
+   */
+  const getDockPingColor = (dockId, isSelected, isHovered) => {
+    if (isHovered) return '#1565c0';
+    if (isSelected) return '#ff9800';
+    const status = locationPingStatus[dockId];
+    if (status === 'down') return '#f44336';
+    if (status === 'up') return '#4caf50';
+    return '#1976d2'; // default blue (loading or unknown)
+  };
+
+  /**
+   * Returns the pulse animation name for a dock marker.
+   */
+  const getDockAnimation = (dockId, isSelected, isHovered) => {
+    if (isSelected || isHovered) return 'none';
+    const status = locationPingStatus[dockId];
+    if (status === 'down') return 'pulseRed 2s infinite';
+    if (status === 'up') return 'pulseGreen 2s infinite';
+    return 'none';
   };
 
   const docks = [
@@ -1922,76 +2090,14 @@ const PortNavigationApp = () => {
     // Add more printer locations as needed
   ];
 
-  const handleDockClick = async (dock) => {
-    setLoading(true);
-    setError(null);
+  const handleDockClick = (dock) => {
     setSelectedDock(dock);
-
-    try {
-      const response = await fetch('http://10.0.13.48:8088/ICTDevice/GetHeadBulid', {
-        method: 'GET',
-        headers: {
-          Accept: 'application/json',
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
-
-      if (data.StatusCode === 200 && data.ResultSet) {
-        const filteredFloors = data.ResultSet.filter((floor) => floor.Build_Code === dock.id);
-        setFloors(filteredFloors);
-        setCurrentView('floors');
-      } else {
-        setError('No floors found for this building');
-      }
-    } catch (error) {
-      console.error('API error:', error);
-      setError('Network error: ' + error.message);
-    } finally {
-      setLoading(false);
-    }
+    setCurrentView('floors');
   };
 
-  const handleFloorClick = async (floor) => {
+  const handleFloorClick = (floor) => {
     setSelectedFloor(floor);
-    setLoading(true);
-    setError(null);
-
-    try {
-      const response = await fetch(`http://10.0.13.48:8088/ICTDevice/GetHeadBulid`, {
-        method: 'GET',
-        headers: {
-          Accept: 'application/json',
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
-
-      if (data.StatusCode === 200 && data.ResultSet) {
-        const filteredSectors = data.ResultSet.filter(
-          (item) =>
-            item.Build_Code === selectedDock?.id &&
-            item.Flo_No.toString() === floor.Flo_No.toString(),
-        );
-        setSectors(filteredSectors);
-        setCurrentView('sectors');
-      } else {
-        setError('No sectors found for this floor');
-      }
-    } catch (error) {
-      console.error('API error:', error);
-      setError('Network error: ' + error.message);
-    } finally {
-      setLoading(false);
-    }
+    setCurrentView('sectors');
   };
 
   const handleSectorClick = async (sector) => {
@@ -2346,104 +2452,164 @@ const PortNavigationApp = () => {
               {docks.map((dock) => {
                 const isSelected = selectedDock?.id === dock.id;
                 const isHovered = hoveredDock === dock.id;
+                const stats = getDockStats(dock.id);
+                const inactiveCount = stats.totalCount - stats.activeCount;
 
                 return (
-                  <Tooltip
+                  <Box
                     key={dock.id}
-                    title={
-                      <Box sx={{ p: 1 }}>
-                        <Typography variant="subtitle2" fontWeight="bold" sx={{ color: '#fff', mb: 0.5 }}>
-                          {dock.name}
-                        </Typography>
-                        {dock.description && (
-                          <Typography variant="body2" sx={{ color: '#ccc', mb: 1 }}>
-                            {dock.description}
-                          </Typography>
-                        )}
-                        <Typography variant="body2" sx={{ color: '#fff', mb: 0.5 }}>
-                          Total Devices: {getDockStats(dock.id).totalCount}
-                        </Typography>
-                        <Typography variant="body2" sx={{ color: '#4ade80', mb: 0.5 }}>
-                          Active: {getDockStats(dock.id).activeCount}
-                        </Typography>
-                        <Typography variant="body2" sx={{ color: '#ef4444' }}>
-                          Inactive: {getDockStats(dock.id).totalCount - getDockStats(dock.id).activeCount}
-                        </Typography>
-                      </Box>
-                    }
-                    arrow
-                    placement="top"
+                    sx={{
+                      position: 'absolute',
+                      left: dock.x,
+                      top: dock.y,
+                      transform: 'translate(-50%, -50%)',
+                      zIndex: isSelected ? 20 : 10,
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                    }}
                   >
-                    <Fab
-                      size="small"
-                      onClick={() => handleDockClick(dock)}
-                      onMouseEnter={() => setHoveredDock(dock.id)}
-                      onMouseLeave={() => setHoveredDock(null)}
-                      sx={{
-                        color: '#fff',
-                        backgroundColor: isHovered
-                          ? '#1565c0'
-                          : isSelected
-                          ? '#ff9800'
-                          : (getDockStats(dock.id).totalCount - getDockStats(dock.id).activeCount) > 0 // Highlight red if inactive exists
-                          ? '#f44336'
-                          : getDockStats(dock.id).activeCount > 0 // Highlight green if active exists
-                          ? '#4caf50'
-                          : '#1976d2',
-                        position: 'absolute',
-                        left: dock.x,
-                        top: dock.y,
-                        transform: isSelected
-                          ? 'translate(-50%, -50%) scale(1.4)'
-                          : 'translate(-50%, -50%) scale(1)',
-                        zIndex: isSelected ? 20 : 10,
-                        boxShadow: isHovered
-                          ? '0 0 12px 14px rgba(25, 118, 210, 0.4)'
-                          : isSelected
-                          ? '0 4px 16px rgba(0,0,0,0.4)'
-                          : '0 2px 8px rgba(0,0,0,0.3)',
-                        transition: 'all 0.3s ease',
-                        cursor: 'pointer',
-                        '@keyframes pulseRed': {
-                          '0%': {
-                            boxShadow: '0 0 0 0 rgba(244, 67, 54, 0.7)',
-                          },
-                          '70%': {
-                            boxShadow: '0 0 0 10px rgba(244, 67, 54, 0)',
-                          },
-                          '100%': {
-                            boxShadow: '0 0 0 0 rgba(244, 67, 54, 0)',
-                          },
-                        },
-                        '@keyframes pulseGreen': {
-                          '0%': {
-                            boxShadow: '0 0 0 0 rgba(76, 175, 80, 0.7)',
-                          },
-                          '70%': {
-                            boxShadow: '0 0 0 10px rgba(76, 175, 80, 0)',
-                          },
-                          '100%': {
-                            boxShadow: '0 0 0 0 rgba(76, 175, 80, 0)',
-                          },
-                        },
-                        animation: !isSelected && !isHovered
-                          ? (getDockStats(dock.id).totalCount - getDockStats(dock.id).activeCount) > 0
-                            ? 'pulseRed 2s infinite'
-                            : getDockStats(dock.id).activeCount > 0
-                            ? 'pulseGreen 2s infinite'
-                            : 'none'
-                          : 'none',
-                        '&:hover': {
-                          transform: 'translate(-50%, -50%) scale(1.4)',
-                          backgroundColor: '#1565c0',
-                          boxShadow: '0 0 12px 14px rgba(25, 118, 210, 0.4)',
-                        },
-                      }}
+                     {/* Always visible inactive devices count tooltip */}
+                    {inactiveCount > 0 && (
+                      <Box
+                        sx={{
+                          position: 'absolute',
+                          bottom: isSelected ? '44px' : '34px', // Floats up dynamically when selected
+                          backgroundColor: '#1e293b',
+                          color: '#ffffff',
+                          border: '1px solid rgba(255,255,255,0.2)',
+                          borderRadius: '6px',
+                          px: 1.0,
+                          py: 0.3,
+                          fontSize: '11px',
+                          fontWeight: 'bold',
+                          boxShadow: '0 2px 8px rgba(0,0,0,0.5)',
+                          whiteSpace: 'nowrap',
+                          pointerEvents: 'none',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          transition: 'all 0.3s ease',
+                          zIndex: 25,
+                          '&::after': {
+                            content: '""',
+                            position: 'absolute',
+                            top: '100%',
+                            left: '50%',
+                            transform: 'translateX(-50%)',
+                            borderWidth: '4px',
+                            borderStyle: 'solid',
+                            borderColor: '#1e293b transparent transparent transparent',
+                          }
+                        }}
+                      >
+                        <WifiOff size={13} color="#ef4444" />
+                        <span>{inactiveCount}</span>
+                      </Box>
+                    )}
+
+                    {/* Hover tooltip for full building stats */}
+                    <Tooltip
+                      title={
+                        <Box sx={{ p: 1 }}>
+                          <Typography variant="subtitle2" fontWeight="bold" sx={{ color: '#fff', mb: 0.5 }}>
+                            {dock.name}
+                          </Typography>
+                          {dock.description && (
+                            <Typography variant="body2" sx={{ color: '#ccc', mb: 1 }}>
+                              {dock.description}
+                            </Typography>
+                          )}
+                          <Typography variant="body2" sx={{ color: '#fff', mb: 0.5 }}>
+                            Total Devices: {stats.totalCount}
+                          </Typography>
+                          <Typography variant="body2" sx={{ color: '#4ade80', mb: 0.5 }}>
+                            Active: {stats.activeCount}
+                          </Typography>
+                          <Typography variant="body2" sx={{ color: '#ef4444', mb: 0.5 }}>
+                            Inactive: {inactiveCount}
+                          </Typography>
+                          <Typography
+                            variant="body2"
+                            sx={{
+                              color:
+                                locationPingStatus[dock.id] === 'down'
+                                  ? '#ff6b6b'
+                                  : locationPingStatus[dock.id] === 'up'
+                                  ? '#4ade80'
+                                  : '#aaa',
+                              fontWeight: 'bold',
+                              mt: 0.5,
+                            }}
+                          >
+                            Ping:{' '}
+                            {locationPingStatus[dock.id] === 'down'
+                              ? '🔴 Device(s) Down'
+                              : locationPingStatus[dock.id] === 'up'
+                              ? '🟢 All Devices Up'
+                              : locationPingStatus[dock.id] === 'loading'
+                              ? '⏳ Checking...'
+                              : '⚪ No Data'}
+                          </Typography>
+                        </Box>
+                      }
+                      arrow
+                      placement="top"
                     >
-                   
-                      <LocationOn />
-                    </Fab>
-                  </Tooltip>
+                      <Fab
+                        size="small"
+                        onClick={() => handleDockClick(dock)}
+                        onMouseEnter={() => setHoveredDock(dock.id)}
+                        onMouseLeave={() => setHoveredDock(null)}
+                        sx={{
+                          color: '#fff',
+                          backgroundColor: getDockPingColor(dock.id, isSelected, isHovered),
+                          transform: isSelected
+                            ? 'scale(1.4)'
+                            : isHovered
+                            ? 'scale(1.2)'
+                            : 'scale(1)',
+                          boxShadow: isHovered
+                            ? '0 0 12px 14px rgba(25, 118, 210, 0.4)'
+                            : isSelected
+                            ? '0 4px 16px rgba(0,0,0,0.4)'
+                            : locationPingStatus[dock.id] === 'down'
+                            ? '0 0 8px 4px rgba(244, 67, 54, 0.5)'
+                            : '0 2px 8px rgba(0,0,0,0.3)',
+                          transition: 'all 0.3s ease',
+                          cursor: 'pointer',
+                          '@keyframes pulseRed': {
+                            '0%': {
+                              boxShadow: '0 0 0 0 rgba(244, 67, 54, 0.7)',
+                            },
+                            '70%': {
+                              boxShadow: '0 0 0 10px rgba(244, 67, 54, 0)',
+                            },
+                            '100%': {
+                              boxShadow: '0 0 0 0 rgba(244, 67, 54, 0)',
+                            },
+                          },
+                          '@keyframes pulseGreen': {
+                            '0%': {
+                              boxShadow: '0 0 0 0 rgba(76, 175, 80, 0.7)',
+                            },
+                            '70%': {
+                              boxShadow: '0 0 0 10px rgba(76, 175, 80, 0)',
+                            },
+                            '100%': {
+                              boxShadow: '0 0 0 0 rgba(76, 175, 80, 0)',
+                            },
+                          },
+                          animation: getDockAnimation(dock.id, isSelected, isHovered),
+                          '&:hover': {
+                            backgroundColor: '#1565c0',
+                          },
+                        }}
+                      >
+                        <LocationOn />
+                      </Fab>
+                    </Tooltip>
+                  </Box>
                 );
               })}
             </>
@@ -2788,7 +2954,8 @@ const PortNavigationApp = () => {
   };
 
   const renderFloorsView = () => {
-    const floorMap = floors.reduce((acc, sector) => {
+    const buildingSectors = allSectorsData.filter((sector) => sector.Build_Code === selectedDock?.id);
+    const floorMap = buildingSectors.reduce((acc, sector) => {
       const key = sector.Flo_No;
 
       if (!acc[key]) {
@@ -2804,7 +2971,7 @@ const PortNavigationApp = () => {
       }
 
       acc[key].ComputerCount += Number(sector.ComputerCount || 0);
-      acc[key].ActiveCount += Number(sector.ComputerCount || 0);
+      acc[key].ActiveCount += Number(sector.ActiveCount !== undefined ? sector.ActiveCount : (sector.ComputerCount || 0));
       acc[key].sectors.push(sector);
 
       return acc;
@@ -3009,7 +3176,11 @@ const PortNavigationApp = () => {
   };
 
   const renderSectorsView = () => {
-    const filteredSectors = sectors.filter((sector) => sector.Flo_Code === selectedFloor?.Flo_Code);
+    const filteredSectors = allSectorsData.filter(
+      (sector) =>
+        sector.Build_Code === selectedDock?.id &&
+        sector.Flo_No.toString() === selectedFloor?.Flo_No.toString()
+    );
 
     return (
       <Box
@@ -3064,8 +3235,8 @@ const PortNavigationApp = () => {
 
           {/* Sector Cards */}
           <Grid container spacing={3}>
-            {sectors.map((sector) => (
-              <Grid item xs={12} sm={6} md={4} key={sector.Flo_Code}>
+            {filteredSectors.map((sector) => (
+              <Grid item xs={12} sm={6} md={4} key={`${sector.Flo_No}-${sector.Cat_CodeB}`}>
                 <Card
                   onClick={() => handleSectorClick(sector)}
                   sx={{
