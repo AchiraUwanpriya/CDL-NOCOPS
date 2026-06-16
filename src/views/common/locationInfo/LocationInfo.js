@@ -1430,30 +1430,15 @@ const PortNavigationApp = () => {
 
   /**
    * Returns true if the DoPinOne response indicates the device is DOWN.
-   * Uses broad case-insensitive matching so "Ping Failed", "ping failed",
-   * "Host unreachable", etc. are all caught correctly.
+   * "Successfully Ping!!" → active (up)
+   * "Ping Failed!!"       → inactive (down)
    */
   const isPingDown = (pingResult) => {
-    if (pingResult.StatusCode !== 200) return true;
-
-    const resultStr = (pingResult.Result || '').toLowerCase();
-    const resultSetStatus = (pingResult.ResultSet?.Status || '').toLowerCase();
-
-    // Explicit success keywords — if any match, device is UP
-    const successKeywords = ['success', 'reachable', 'alive', ' up', 'online'];
-    const isSuccess = successKeywords.some((kw) => resultStr.includes(kw));
-    if (isSuccess) return false;
-
-    // Explicit failure keywords — if any match, device is DOWN
-    const failKeywords = ['fail', 'down', 'unreachable', 'timeout', 'error', 'not reachable', 'false'];
-    const isFail =
-      failKeywords.some((kw) => resultStr.includes(kw)) ||
-      failKeywords.some((kw) => resultSetStatus.includes(kw)) ||
-      pingResult.ResultSet?.IsAlive === false;
-    if (isFail) return true;
-
-    // If Result is empty or unrecognised, treat as down (safe default)
-    return !resultStr;
+    const result = (pingResult.Result || '').trim();
+    if (result === 'Successfully Ping!!') return false; // active
+    if (result === 'Ping Failed!!')       return true;  // inactive
+    // Fallback: treat unrecognised / empty result as down
+    return true;
   };
 
   /**
@@ -1505,15 +1490,15 @@ const PortNavigationApp = () => {
 
                 // Ping all devices in this sector in parallel
                 const pingPromises = devices.map(async (device) => {
-                  const ipAddress = device.IP_Addres || device.Com_IP || device.ip || device.IpAddress;
-                  if (!ipAddress) return { ip: null, isDown: true };
+                  const deviceName = device.ComputerName || device.ComputerCode;
+                  if (!deviceName) return { isDown: false }; // skip devices with no name
 
                   try {
-                    const pingResult = await DeviceInfoService.DoPinOne(ipAddress);
-                    return { ip: ipAddress, isDown: isPingDown(pingResult) };
+                    const pingResult = await DeviceInfoService.DoPinOne(deviceName);
+                    return { isDown: isPingDown(pingResult) };
                   } catch (err) {
-                    console.warn(`[LocationMap DoPinOne] ${ipAddress} failed:`, err);
-                    return { ip: ipAddress, isDown: true };
+                    console.warn(`[LocationMap DoPinOne] ${deviceName} failed:`, err);
+                    return { isDown: true };
                   }
                 });
 
@@ -2470,7 +2455,7 @@ const PortNavigationApp = () => {
                     }}
                   >
                      {/* Always visible inactive devices count tooltip */}
-                    {inactiveCount > 0 && (
+                    {stats.totalCount > 0 && (
                       <Box
                         sx={{
                           position: 'absolute',
@@ -2503,8 +2488,12 @@ const PortNavigationApp = () => {
                           }
                         }}
                       >
-                        <WifiOff size={13} color="#ef4444" />
-                        <span>{inactiveCount}</span>
+                        {inactiveCount > 0 ? (
+                          <WifiOff size={13} color="#ef4444" />
+                        ) : (
+                          <Wifi size={13} color="#4ade80" />
+                        )}
+                        <span>{inactiveCount} / {stats.totalCount}</span>
                       </Box>
                     )}
 

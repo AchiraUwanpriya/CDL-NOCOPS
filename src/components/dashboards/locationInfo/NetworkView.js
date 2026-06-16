@@ -590,30 +590,15 @@ const NetworkView = ({
 
     /**
      * Returns true if the DoPinOne response indicates the device is DOWN.
-     * Uses broad case-insensitive matching so "Ping Failed", "ping failed",
-     * "Host unreachable", etc. are all caught.
+     * "Successfully Ping!!" → active (up)
+     * "Ping Failed!!"       → inactive (down)
      */
     const isPingDown = (pingResult) => {
-      // If the HTTP-level result code is not 200, treat as down
-      if (pingResult.StatusCode !== 200) return true;
-
-      const resultStr = (pingResult.Result || '').toLowerCase();
-      const resultSetStatus = (pingResult.ResultSet?.Status || '').toLowerCase();
-
-      // Explicit success keywords — if any match, device is UP
-      const successKeywords = ['success', 'reachable', 'alive', ' up', 'online'];
-      const isSuccess = successKeywords.some((kw) => resultStr.includes(kw));
-      if (isSuccess) return false;
-
-      // Explicit failure keywords — if any match, device is DOWN
-      const failKeywords = ['fail', 'down', 'unreachable', 'timeout', 'error', 'not reachable', 'false'];
-      const isFail = failKeywords.some((kw) => resultStr.includes(kw)) ||
-        failKeywords.some((kw) => resultSetStatus.includes(kw)) ||
-        pingResult.ResultSet?.IsAlive === false;
-      if (isFail) return true;
-
-      // If Result is empty or unrecognised, treat as down (safe default)
-      return !resultStr;
+      const result = (pingResult.Result || '').trim();
+      if (result === 'Successfully Ping!!') return false; // active
+      if (result === 'Ping Failed!!')       return true;  // inactive
+      // Fallback: treat unrecognised / empty result as down
+      return true;
     };
 
     const fetchAndPingDevices = async () => {
@@ -625,25 +610,25 @@ const NetworkView = ({
         const devices = data.ResultSet || [];
         setNetworkDevices(devices);
 
-        // Mark all as loading
+        // Mark all named devices as loading
         const initStatus = {};
         devices.forEach((d) => {
-          const ip = d.IP_Addres || d.Com_IP || d.ip || d.IpAddress;
-          if (ip) initStatus[ip] = 'loading';
+          const deviceName = d.ComputerName || d.ComputerCode;
+          if (deviceName) initStatus[deviceName] = 'loading';
         });
         setDevicePingStatus(initStatus);
 
-        // Ping each device using DoPinOne
+        // Ping each device using DoPinOne (keyed by device name)
         for (const device of devices) {
-          const ip = device.IP_Addres || device.Com_IP || device.ip || device.IpAddress;
-          if (!ip) continue;
+          const deviceName = device.ComputerName || device.ComputerCode;
+          if (!deviceName) continue; // skip devices with no name
           try {
-            const pingResult = await DeviceInfoService.DoPinOne(ip);
+            const pingResult = await DeviceInfoService.DoPinOne(deviceName);
             const isDown = isPingDown(pingResult);
-            setDevicePingStatus((prev) => ({ ...prev, [ip]: isDown ? 'down' : 'up' }));
+            setDevicePingStatus((prev) => ({ ...prev, [deviceName]: isDown ? 'down' : 'up' }));
           } catch (err) {
-            console.warn(`[DoPinOne] ${ip} threw:`, err);
-            setDevicePingStatus((prev) => ({ ...prev, [ip]: 'down' }));
+            console.warn(`[DoPinOne] ${deviceName} threw:`, err);
+            setDevicePingStatus((prev) => ({ ...prev, [deviceName]: 'down' }));
           }
         }
       } catch (err) {
@@ -729,11 +714,11 @@ const NetworkView = ({
     }
   };
 
-  // Determine live ping status for a device
+  // Determine live ping status for a device (keyed by device name)
   const getDevicePingStatus = (device) => {
-    const ip = device.IP_Addres || device.Com_IP || device.ip || device.IpAddress;
-    if (!ip) return 'unknown';
-    return devicePingStatus[ip] || 'unknown';
+    const deviceName = device.ComputerName || device.ComputerCode;
+    if (!deviceName) return 'unknown';
+    return devicePingStatus[deviceName] || 'unknown';
   };
 
   const activeDevices = networkDevices.filter((d) => getDevicePingStatus(d) === 'up').length;
