@@ -3223,34 +3223,123 @@ const PortNavigationApp = () => {
           </Box>
 
           {/* Sector Cards */}
-          <Grid container spacing={3}>
-            {filteredSectors.map((sector) => (
-              <Grid item xs={12} sm={6} md={4} key={`${sector.Flo_No}-${sector.Cat_CodeB}`}>
-                <Card
-                  onClick={() => handleSectorClick(sector)}
-                  sx={{
-                    p: 2,
-                    cursor: 'pointer',
-                    background: 'rgba(255,255,255,0.05)',
-                    border: '1px solid rgba(255,255,255,0.1)',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    '&:hover': { transform: 'scale(1.03)', background: 'rgba(255,255,255,0.1)' },
-                  }}
-                >
-                  <Box sx={{ mb: 2 }}>
-                    <img src={SectorIcon} alt="Sector" width={48} height={48} />
-                  </Box>
+          <Grid container spacing={2}>
+            {filteredSectors.map((sector) => {
+              const totalCount = Number(sector.ComputerCount || 0);
+              const activeCount = Number(sector.ActiveCount !== undefined ? sector.ActiveCount : (sector.ComputerCount || 0));
+              const inactiveCount = totalCount - activeCount;
 
-                  <CardContent sx={{ textAlign: 'center', p: 0 }}>
-                    <Typography variant="h6" color="white">
-                      {sector.Flo_Name}
-                    </Typography>
-                  </CardContent>
-                </Card>
-              </Grid>
-            ))}
+              return (
+                <Grid item xs={12} sm={6} md={4} lg={3} key={`${sector.Flo_No}-${sector.Cat_CodeB}`}>
+                  <Card
+                    onClick={() => handleSectorClick(sector)}
+                    sx={{
+                      height: '100%',
+                      borderRadius: 2,
+                      p: 1.5,
+                      cursor: 'pointer',
+                      background: inactiveCount > 0 ? 'rgba(244, 67, 54, 0.08)' : 'rgba(255,255,255,0.05)',
+                      border: inactiveCount > 0 ? '1px solid rgba(244, 67, 54, 0.4)' : '1px solid rgba(255,255,255,0.1)',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      transition: '0.3s',
+                      '&:hover': {
+                        transform: 'scale(1.03)',
+                        boxShadow: inactiveCount > 0 ? '0 0 12px rgba(244, 67, 54, 0.4)' : 6,
+                        background: inactiveCount > 0 ? 'rgba(244, 67, 54, 0.12)' : 'rgba(255,255,255,0.1)',
+                      },
+                    }}
+                  >
+                    <CardContent sx={{ p: 0, width: '100%' }}>
+                      <Box
+                        sx={{
+                          display: 'flex',
+                          justifyContent: 'center',
+                          alignItems: 'center',
+                          mb: 1.5,
+                        }}
+                      >
+                        <Box
+                          sx={{
+                            width: 44,
+                            height: 44,
+                            background: inactiveCount > 0 ? 'linear-gradient(to right, #ef4444, #f44336)' : 'linear-gradient(to right, #3b82f6, #8b5cf6)',
+                            borderRadius: 1.5,
+                            display: 'flex',
+                            justifyContent: 'center',
+                            alignItems: 'center',
+                          }}
+                        >
+                          <img src={SectorIcon} alt="Sector" width={28} height={28} />
+                        </Box>
+                      </Box>
+
+                      <Typography variant="subtitle1" align="center" color="white" fontWeight="bold" gutterBottom sx={{ mb: 1.5, fontSize: '0.95rem' }}>
+                        {sector.Flo_Name}
+                      </Typography>
+
+                      {/* Counts */}
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.75 }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <Monitor size={14} color="#93c5fd" />
+                          <Typography variant="body2" color="white" sx={{ fontSize: '0.8rem' }}>
+                            Total PCs
+                          </Typography>
+                        </Box>
+                        <Typography variant="body2" color="white" sx={{ fontSize: '0.8rem' }}>
+                          {totalCount}
+                        </Typography>
+                      </Box>
+
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.75 }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <Wifi size={14} color="#4ade80" />
+                          <Typography variant="body2" color="#4ade80" sx={{ fontSize: '0.8rem' }}>
+                            Active
+                          </Typography>
+                        </Box>
+                        <Typography variant="body2" color="#4ade80" sx={{ fontSize: '0.8rem' }}>
+                          {activeCount}
+                        </Typography>
+                      </Box>
+
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.75 }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <WifiOff size={14} color="#ef4444" />
+                          <Typography variant="body2" color="#ef4444" sx={{ fontSize: '0.8rem' }}>
+                            Inactive
+                          </Typography>
+                        </Box>
+                        <Typography variant="body2" color="#ef4444" sx={{ fontSize: '0.8rem' }}>
+                          {inactiveCount}
+                        </Typography>
+                      </Box>
+
+                      {/* Progress Bar */}
+                      <Box
+                        sx={{
+                          mt: 1.5,
+                          width: '100%',
+                          height: 5,
+                          backgroundColor: 'rgba(255,255,255,0.2)',
+                          borderRadius: 4,
+                        }}
+                      >
+                        <Box
+                          sx={{
+                            width: totalCount > 0 ? `${(activeCount / totalCount) * 100}%` : '0%',
+                            height: '100%',
+                            background: 'linear-gradient(to right, #4ade80, #3b82f6)',
+                            borderRadius: 4,
+                            transition: 'width 0.3s',
+                          }}
+                        />
+                      </Box>
+                    </CardContent>
+                  </Card>
+                </Grid>
+              );
+            })}
           </Grid>
         </Box>
       </Box>
