@@ -3030,6 +3030,7 @@ const PortNavigationApp = () => {
             {formattedFloors.map((floor) => {
               const activeCount = floor.ActiveCount;
               const totalCount = floor.ComputerCount;
+              const inactiveCount = totalCount - activeCount;
 
               return (
                 <Grid item xs={12} sm={6} md={3} key={floor.Flo_No}>
@@ -3038,14 +3039,14 @@ const PortNavigationApp = () => {
                     sx={{
                       height: '100%',
                       borderRadius: 3,
-                      background: 'rgba(255,255,255,0.05)',
-                      border: '1px solid rgba(255,255,255,0.1)',
+                      background: inactiveCount > 0 ? 'rgba(244, 67, 54, 0.08)' : 'rgba(255,255,255,0.05)',
+                      border: inactiveCount > 0 ? '1px solid rgba(244, 67, 54, 0.4)' : '1px solid rgba(255,255,255,0.1)',
                       cursor: 'pointer',
                       transition: '0.3s',
                       '&:hover': {
                         transform: 'scale(1.03)',
-                        boxShadow: 6,
-                        background: 'rgba(255,255,255,0.1)',
+                        boxShadow: inactiveCount > 0 ? '0 0 12px rgba(244, 67, 54, 0.4)' : 6,
+                        background: inactiveCount > 0 ? 'rgba(244, 67, 54, 0.12)' : 'rgba(255,255,255,0.1)',
                       },
                     }}
                   >
@@ -3063,7 +3064,7 @@ const PortNavigationApp = () => {
                           sx={{
                             width: 60,
                             height: 60,
-                            background: 'linear-gradient(to right, #3b82f6, #8b5cf6)',
+                            background: inactiveCount > 0 ? 'linear-gradient(to right, #ef4444, #f44336)' : 'linear-gradient(to right, #3b82f6, #8b5cf6)',
                             borderRadius: 2,
                             display: 'flex',
                             justifyContent: 'center',
@@ -3079,7 +3080,7 @@ const PortNavigationApp = () => {
                             right: -10,
                             width: 40,
                             height: 40,
-                            background: 'linear-gradient(to right, #3b82f6, #8b5cf6)',
+                            background: inactiveCount > 0 ? 'linear-gradient(to right, #ef4444, #f44336)' : 'linear-gradient(to right, #3b82f6, #8b5cf6)',
                             color: 'white',
                             borderRadius: '50%',
                             display: 'flex',
