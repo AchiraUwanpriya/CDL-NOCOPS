@@ -1393,7 +1393,7 @@ const PortNavigationApp = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [zoomOpen, setZoomOpen] = useState(false);
   const [openImage, setOpenImage] = useState(false);
-  
+
   // Toggle states for different views
   const [showSwitches, setShowSwitches] = useState(false);
   const [showPrinters, setShowPrinters] = useState(false);
@@ -1727,13 +1727,13 @@ const PortNavigationApp = () => {
       y: '75%',
     },
     { id: 'CO', name: 'Calibration Office', floors: 2, x: '80%', y: '18%' },
-    { 
-      id: 'CA', 
-      name: 'CDPLC Administrative Building',  
-      description: 'HR, Supplies, Transport and Welfare and Production Office', 
-      floors: 4, 
-      x: '74%', 
-      y: '28%' 
+    {
+      id: 'CA',
+      name: 'CDPLC Administrative Building',
+      description: 'HR, Supplies, Transport and Welfare and Production Office',
+      floors: 4,
+      x: '74%',
+      y: '28%'
     },
     { id: 'MS', name: 'Main Store Building', floors: 5, x: '71%', y: '27%' },
     { id: 'FA', name: '40th Anniversary Building', floors: 3, x: '58%', y: '37%' },
@@ -1759,23 +1759,23 @@ const PortNavigationApp = () => {
     { id: 9, name: '1st Floor - Service Procurement', description: '', floors: 1, x: '38%', y: '58%' },
     { id: 10, name: 'Ground Floor - Administrative Office', description: '', floors: 1, x: '37%', y: '57%' },
     { id: 11, name: 'LOFT Office', description: '', floors: 1, x: '35%', y: '51%' },
-    { id: 12, name: 'Scaffolding Office', description: '', floors: 1, x: '36%', y: '41%'},
-    { id: 13, name: 'Steel Hull Construction (SWC) Engineer Office', description: '', floors: 1, x: '46.5%', y: '48%'},
-    { id: 14, name: 'Samagi Office', description: '', floors: 1, x: '45%', y: '46.5%'},
+    { id: 12, name: 'Scaffolding Office', description: '', floors: 1, x: '36%', y: '41%' },
+    { id: 13, name: 'Steel Hull Construction (SWC) Engineer Office', description: '', floors: 1, x: '46.5%', y: '48%' },
+    { id: 14, name: 'Samagi Office', description: '', floors: 1, x: '45%', y: '46.5%' },
     { id: 15, name: 'Site Erection Office', description: '', floors: 1, x: '85%', y: '61%' },
     { id: 16, name: 'Training Center', description: '', floors: 1, x: '63.5%', y: '23.5%' },
     { id: 17, name: 'Training Center - Class Room C', description: '', floors: 1, x: '60%', y: '24%' },
     { id: 18, name: 'Quality Control Department', description: '', floors: 1, x: '60.5%', y: '20%' },
     { id: 19, name: 'Dock Electrical Office', description: '', floors: 1, x: '65%', y: '30%' },
-    { id: 20, name: 'Main Stores - Location C', description: '', floors: 1, x: '73%', y: '31%'},
+    { id: 20, name: 'Main Stores - Location C', description: '', floors: 1, x: '73%', y: '31%' },
     { id: 21, name: 'Production Office Switch (Old)', description: '', floors: 1, x: '75%', y: '33%' },
     { id: 22, name: 'HR Office', description: '', floors: 1, x: '74%', y: '29%' },
     { id: 23, name: 'Fitting Shop Engineer Office', description: '', floors: 1, x: '78.5%', y: '13.5%' },
     { id: 24, name: 'Electrical Shop Office', description: '', floors: 1, x: '88%', y: '29.5%' },
     { id: 25, name: 'Calibration Office ', description: '', floors: 1, x: '83%', y: '22%' },
-    { id: 26, name: 'Deck Fitting Shop Office', description: '', floors: 1, x: '89%', y: '25.5%'},
+    { id: 26, name: 'Deck Fitting Shop Office', description: '', floors: 1, x: '89%', y: '25.5%' },
     { id: 27, name: 'Welfare Canteen Office', description: '', floors: 1, x: '76%', y: '21%' },
-    { id: 28, name: 'Transport and Welfare Office', description: '', floors: 1, x: '73%', y: '25%'},
+    { id: 28, name: 'Transport and Welfare Office', description: '', floors: 1, x: '73%', y: '25%' },
     { id: 29, name: 'Blasting Chamber Office', description: '', floors: 1, x: '90%', y: '51%' },
     { id: 30, name: '1st Floor Switch', description: '', floors: 1, x: '30%', y: '84%' },
     { id: 31, name: 'Gate No.01 Time Clock Switch (Security Hut)', description: '', floors: 1, x: '33.5%', y: '79%' },
@@ -1788,12 +1788,12 @@ const PortNavigationApp = () => {
     { id: 38, name: 'Component Shop Office', description: '', floors: 1, x: '43%', y: '49%' },
     { id: 39, name: '2nd Floor Lunch Room Camera Switch', description: '', floors: 1, x: '31%', y: '85%' },
     { id: 40, name: 'South Pier Camera Switch', description: '', floors: 1, x: '11%', y: '47%' },
-    { id: 41, name: 'Location D Switch (Old)', description: '', floors: 1, x: '48.5%', y: '47.5%'},
+    { id: 41, name: 'Location D Switch (Old)', description: '', floors: 1, x: '48.5%', y: '47.5%' },
     { id: 42, name: 'Gate No.2 Camera Switch', description: '', floors: 1, x: '58%', y: '43%' },
-    { id: 43, name: 'SWC Unit Office Network Switch', description: '', floors: 1, x: '81%', y: '39%'},
-    { id: 44, name: 'Gate No.3 (Security Hut) Network Switch', description: '', floors: 1, x: '77%', y: '9.5%'},
+    { id: 43, name: 'SWC Unit Office Network Switch', description: '', floors: 1, x: '81%', y: '39%' },
+    { id: 44, name: 'Gate No.3 (Security Hut) Network Switch', description: '', floors: 1, x: '77%', y: '9.5%' },
     { id: 45, name: 'New Sub Contract Network Switch', description: '', floors: 1, x: '45.5%', y: '16%' },
-    { id: 46, name: 'Production Office Switch (New)', description: '', floors: 1, x: '75.5%', y: '31.5%'},
+    { id: 46, name: 'Production Office Switch (New)', description: '', floors: 1, x: '75.5%', y: '31.5%' },
     { id: 47, name: 'Supplies Switch', description: '', floors: 1, x: '76%', y: '30%' },
   ];
 
@@ -1801,11 +1801,11 @@ const PortNavigationApp = () => {
   const ups = [
     {
       id: 'ID',
-      name: 'IT Department' ,
+      name: 'IT Department',
       description: 'IT Department',
       floors: 3,
-        x: '34%', 
-        y: '85%',
+      x: '34%',
+      y: '85%',
     },
     {
       id: 'SOG1',
@@ -1826,31 +1826,31 @@ const PortNavigationApp = () => {
       name: 'Administrative Office',
       description: 'Administrative Office',
       floors: 3,
-      x: '38%', y: '58%' 
+      x: '38%', y: '58%'
     },
-    
-     {
+
+    {
       id: 'LO',
       name: 'LOFT Office',
       description: 'LOFT Office',
       floors: 0,
       x: '35%', y: '51%'
     },
-    
+
     {
       id: 'Swr',
       name: 'SWR Supervisor Office',
       description: 'SWR Supervisor Office',
-      floors: 1, 
+      floors: 1,
       x: '46%',
       y: '47%'
     },
     {
       id: 'NBD',
-      name: 'NBD Tool Stores', 
+      name: 'NBD Tool Stores',
       description: 'NBD Tool Stores',
-      floors: 1, 
-      x: '46%', y: '51%' ,
+      floors: 1,
+      x: '46%', y: '51%',
     },
     {
       id: 'MAO',
@@ -1882,7 +1882,7 @@ const PortNavigationApp = () => {
     },
 
 
-     {
+    {
       id: 'SWC',
       name: 'SWC Unit Office',
       description: 'SWC Unit Office',
@@ -1903,7 +1903,7 @@ const PortNavigationApp = () => {
       floors: 4,
       x: '72%', y: '28%'
     },
-     {
+    {
       id: 'TC',
       name: 'Training Center',
       description: 'Training Center',
@@ -1957,22 +1957,22 @@ const PortNavigationApp = () => {
       description: 'Buisness Department',
       floors: 3,
       x: '31%',
-       y: '85%'
+      y: '85%'
     },
     {
       id: 'NBMO',
       name: 'New Building Marketing office',
       description: 'New Building Marketing office',
-      floors: 1, 
+      floors: 1,
       x: '33%',
       y: '83%'
     },
     {
-     id: 'IT',
+      id: 'IT',
       name: 'IT Department',
       description: 'IT Department',
       floors: 4,
-      x: '34%', 
+      x: '34%',
       y: '82%'
     },
     {
@@ -1982,54 +1982,54 @@ const PortNavigationApp = () => {
       floors: 4,
       x: '35%', y: '80%',
     },
-     {
+    {
       id: 'SD',
       name: 'Safety Department',
       description: 'Safety Department',
       floors: 4,
-      x: '38%', y: '80%' 
+      x: '38%', y: '80%'
     },
     {
       id: 'FD',
       name: 'Finance Department',
       description: 'Finance Department',
       floors: 4,
-       x: '36%', y: '80%',
+      x: '36%', y: '80%',
     },
     {
       id: 'SP',
       name: 'Service Procurement',
       description: 'Service Procurement',
       floors: 4,
-      x: '38%', y: '58%' 
+      x: '38%', y: '58%'
     },
     {
       id: 'MOO',
       name: 'Machinery Outfitting Office',
       description: 'Machinery Outfitting Office',
       floors: 4,
-      x: '49%', y: '45%' 
+      x: '49%', y: '45%'
     },
     {
       id: 'YD',
       name: 'Yard Development Office',
       description: 'Yard Development Office',
       floors: 4,
-      x: '58%', y: '43%' 
+      x: '58%', y: '43%'
     },
     {
       id: 'WA',
       name: 'Welfare Association Office',
       description: 'Welfare Association Office',
       floors: 4,
-      x: '61%', y: '42%' 
+      x: '61%', y: '42%'
     },
     {
       id: 'SE',
       name: 'Site Erection Office',
       description: 'Site Erection Office',
       floors: 4,
-       x: '79%', y: '60%'
+      x: '79%', y: '60%'
     },
     {
       id: 'SWC',
@@ -2038,12 +2038,12 @@ const PortNavigationApp = () => {
       floors: 4,
       x: '81%', y: '39%'
     },
-     {
+    {
       id: 'SUP',
       name: 'Supplies Office',
       description: 'Supplies Office',
       floors: 4,
-     x: '73%', y: '31%' 
+      x: '73%', y: '31%'
     },
     {
       id: 'PRO',
@@ -2052,19 +2052,20 @@ const PortNavigationApp = () => {
       floors: 4,
       x: '75.5%', y: '31.5%'
     },
-     {
+    {
       id: 'HR',
       name: 'HR Office',
       description: 'HR Office',
       floors: 4,
-      x: '74%', y: '29%' 
+      x: '74%', y: '29%'
     },
     {
       id: 'TR',
       name: 'Training Center',
       description: 'Training Center',
       floors: 4,
-      x: '63.5%', y: '23.5%'    },
+      x: '63.5%', y: '23.5%'
+    },
     {
       id: 'QC',
       name: 'Quality Control Department',
@@ -2077,18 +2078,19 @@ const PortNavigationApp = () => {
       name: 'Calibration Office',
       description: 'Calibration Office',
       floors: 4,
-      x: '83%', y: '22%'    },
+      x: '83%', y: '22%'
+    },
     {
       id: 'FSE',
       name: 'Fitting Shop Engineer Office',
       description: 'Fitting Shop Engineer Office',
       floors: 4,
-      x: '78.5%', y: '13.5%' 
+      x: '78.5%', y: '13.5%'
     },
-    
-    
-    
-    
+
+
+
+
     // Add more printer locations as needed
   ];
 
@@ -2421,15 +2423,15 @@ const PortNavigationApp = () => {
                 }}
               >
                 {/* <BatteryChargingFull sx={{ color: showUps ? '#ed6c02' : '#424242' }} /> */}
-                 <img 
-                  src={UpsIcon} 
-                  alt="UPS" 
-                  style={{ 
-                    width: 24, 
+                <img
+                  src={UpsIcon}
+                  alt="UPS"
+                  style={{
+                    width: 24,
                     height: 24,
-                    filter: showUps ? 'none' : 'grayscale(100%)' ,
+                    filter: showUps ? 'none' : 'grayscale(100%)',
                     bgcolor: showPrinters ? '#e0f2fe' : 'white',
-                  }} 
+                  }}
                 />
               </IconButton>
             </Tooltip>
@@ -2471,7 +2473,7 @@ const PortNavigationApp = () => {
                       alignItems: 'center',
                     }}
                   >
-                     {/* Always visible inactive devices count tooltip */}
+                    {/* Always visible inactive devices count tooltip */}
                     {stats.totalCount > 0 && inactiveCount > 0 && (
                       <Box
                         sx={{
@@ -2535,7 +2537,7 @@ const PortNavigationApp = () => {
                           <Typography variant="body2" sx={{ color: '#ef4444', mb: 0.5 }}>
                             Inactive: {inactiveCount}
                           </Typography>
-                          <Typography
+                          {/* <Typography
                             variant="body2"
                             sx={{
                               color:
@@ -2556,7 +2558,7 @@ const PortNavigationApp = () => {
                               : locationPingStatus[dock.id] === 'loading'
                               ? '⏳ Checking...'
                               : '⚪ No Data'}
-                          </Typography>
+                          </Typography> */}
                         </Box>
                       }
                       arrow
@@ -2573,15 +2575,15 @@ const PortNavigationApp = () => {
                           transform: isSelected
                             ? 'scale(1.4)'
                             : isHovered
-                            ? 'scale(1.2)'
-                            : 'scale(1)',
+                              ? 'scale(1.2)'
+                              : 'scale(1)',
                           boxShadow: isHovered
                             ? '0 0 12px 14px rgba(25, 118, 210, 0.4)'
                             : isSelected
-                            ? '0 4px 16px rgba(0,0,0,0.4)'
-                            : locationPingStatus[dock.id] === 'down'
-                            ? '0 0 8px 4px rgba(244, 67, 54, 0.5)'
-                            : '0 2px 8px rgba(0,0,0,0.3)',
+                              ? '0 4px 16px rgba(0,0,0,0.4)'
+                              : locationPingStatus[dock.id] === 'down'
+                                ? '0 0 8px 4px rgba(244, 67, 54, 0.5)'
+                                : '0 2px 8px rgba(0,0,0,0.3)',
                           transition: 'all 0.3s ease',
                           cursor: 'pointer',
                           '@keyframes pulseRed': {
@@ -2782,15 +2784,15 @@ const PortNavigationApp = () => {
                       }}
                     >
                       {/* <BatteryChargingFull /> */}
-                      <img 
-                  src={UpsIcon} 
-                  alt="UPS" 
-                  style={{ 
-                    width: 20, 
-                    height: 20,
-                    filter: showUps ? 'none' : 'grayscale(100%)' 
-                  }} 
-                />
+                      <img
+                        src={UpsIcon}
+                        alt="UPS"
+                        style={{
+                          width: 20,
+                          height: 20,
+                          filter: showUps ? 'none' : 'grayscale(100%)'
+                        }}
+                      />
                     </Fab>
                   </Tooltip>
                 );
@@ -2859,7 +2861,7 @@ const PortNavigationApp = () => {
 
             // Convert percentage strings to numbers for calculation
             const parsePercentage = (str) => parseFloat(str) / 100;
-            
+
             const x1 = parsePercentage(dtsDock.x);
             const y1 = parsePercentage(dtsDock.y);
             const x2 = parsePercentage(mainServer.left);
@@ -2879,13 +2881,13 @@ const PortNavigationApp = () => {
               >
                 <defs>
                   <filter id="glow">
-                    <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
+                    <feGaussianBlur stdDeviation="2" result="coloredBlur" />
                     <feMerge>
-                      <feMergeNode in="coloredBlur"/>
-                      <feMergeNode in="SourceGraphic"/>
+                      <feMergeNode in="coloredBlur" />
+                      <feMergeNode in="SourceGraphic" />
                     </feMerge>
                   </filter>
-                  
+
                   <marker
                     id="arrowhead"
                     markerWidth="10"
@@ -2910,7 +2912,7 @@ const PortNavigationApp = () => {
                   filter="url(#glow)"
                   opacity="0.6"
                 />
-                
+
                 {/* Main dotted line */}
                 <line
                   x1={`${x1 * 100}%`}
@@ -2922,7 +2924,7 @@ const PortNavigationApp = () => {
                   strokeDasharray="6,6"
                   markerEnd="url(#arrowhead)"
                 />
-                
+
                 {/* Animated dashed line */}
                 <line
                   x1={`${x1 * 100}%`}
