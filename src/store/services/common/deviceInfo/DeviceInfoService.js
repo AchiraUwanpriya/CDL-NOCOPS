@@ -29,18 +29,32 @@ const TrafficStatus = () => {
     return response.data;
   });
 };
+
 const GetBandWith = () => {
   return axios.post(`Ping/Getbandwith`).then((response) => {
     return response.data;
   });
 };
+
 const GetTraffic = () => {
   return axios.post(`Ping/GetTraffic`).then((response) => {
     return response.data;
   });
 };
+
 const GetUpIPs = () => {
   return axios.post(`Ping/GetUpIPs`).then((response) => {
+    return response.data;
+  });
+};
+
+/**
+ * Fetches active/inactive status for all machines in one bulk call.
+ * Response: { StatusCode: 200, ResultSet: [ { MachineName, LastSeen, IsOnline, Status }, ... ] }
+ * Use IsOnline (boolean) — true means active/up, false means inactive/down.
+ */
+const GetMachineStatus = () => {
+  return axios.get('Ping/GetMachineStatus').then((response) => {
     return response.data;
   });
 };
@@ -54,6 +68,7 @@ const DeviceInfoService = {
   GetBandWith,
   GetTraffic,
   GetUpIPs,
+  GetMachineStatus,
 };
 
 export default DeviceInfoService;

@@ -584,25 +584,35 @@ const NetworkView = ({
 
   const serverPos = { left: '10%', top: '50%' };
 
-  // 🔹 Fetch devices then ping each one
+  // 🔹 Fetch devices then check status via GetMachineStatus
   useEffect(() => {
     if (!selectedSector?.Flo_No || !selectedSector?.Cat_CodeB) return;
 
     /**
-     * Returns true if the DoPinOne response indicates the device is DOWN.
-     * "Successfully Ping!!" → active (up)
-     * "Ping Failed!!"       → inactive (down)
+     * Determines if a machine is DOWN based on the GetMachineStatus API response.
+     * Looks up the device by name in the statusMap (keyed by MachineName, lowercase).
+     * Uses the IsOnline boolean field — the most reliable indicator from the API.
+     * Response fields per entry: { MachineName, LastSeen, IsOnline, Status }
+     *
+     * Rules:
+     *  - IsOnline: true                         → active (not down)
+     *  - IsOnline: false, Status: "Shutdown"    → intentionally off, NOT counted as down
+     *  - IsOnline: false, other Status          → inactive/down
+     *  - not found in status map                → untracked, NOT counted as down
      */
-    const isPingDown = (pingResult) => {
-      const result = (pingResult.Result || '').trim();
-      if (result === 'Successfully Ping!!') return false; // active
-      if (result === 'Ping Failed!!')       return true;  // inactive
-      // Fallback: treat unrecognised / empty result as down
-      return true;
+    const isMachineDown = (deviceName, statusMap) => {
+      if (!deviceName || !statusMap) return false;
+      const entry = statusMap[deviceName.trim().toLowerCase()];
+      if (!entry) return false; // not tracked by GetMachineStatus → do not count as down
+      if (entry.IsOnline === true) return false; // online → active
+      const status = (entry.Status || '').trim().toLowerCase();
+      if (status === 'shutdown') return false; // intentionally shut down → not a failure
+      return true; // explicitly offline (not shutdown) → down
     };
 
-    const fetchAndPingDevices = async () => {
+    const fetchAndCheckDevices = async () => {
       try {
+        // Fetch devices for this sector
         const res = await fetch(
           `http://10.0.13.48:8088/ICTDevice/GetComDetails?loccode=${selectedSector.Flo_No}&catcodea=${selectedSector.Cat_CodeB}`,
         );
@@ -618,25 +628,34 @@ const NetworkView = ({
         });
         setDevicePingStatus(initStatus);
 
-        // Ping each device using DoPinOne (keyed by device name)
-        for (const device of devices) {
-          const deviceName = device.ComputerName || device.ComputerCode;
-          if (!deviceName) continue; // skip devices with no name
-          try {
-            const pingResult = await DeviceInfoService.DoPinOne(deviceName);
-            const isDown = isPingDown(pingResult);
-            setDevicePingStatus((prev) => ({ ...prev, [deviceName]: isDown ? 'down' : 'up' }));
-          } catch (err) {
-            console.warn(`[DoPinOne] ${deviceName} threw:`, err);
-            setDevicePingStatus((prev) => ({ ...prev, [deviceName]: 'down' }));
+        // --- Single bulk call to GetMachineStatus ---
+        let statusMap = {};
+        try {
+          const machineStatusData = await DeviceInfoService.GetMachineStatus();
+          if (machineStatusData && machineStatusData.ResultSet) {
+            machineStatusData.ResultSet.forEach((m) => {
+              const name = (m.MachineName || m.ComputerName || '').trim().toLowerCase();
+              if (name) statusMap[name] = m;
+            });
           }
+        } catch (err) {
+          console.warn('[NetworkView GetMachineStatus] Failed to fetch bulk machine status:', err);
         }
+
+        // Update ping status for all devices from the status map
+        const updatedStatus = {};
+        devices.forEach((device) => {
+          const deviceName = device.ComputerName || device.ComputerCode;
+          if (!deviceName) return;
+          updatedStatus[deviceName] = isMachineDown(deviceName, statusMap) ? 'down' : 'up';
+        });
+        setDevicePingStatus(updatedStatus);
       } catch (err) {
         console.error('Error fetching devices:', err);
       }
     };
 
-    fetchAndPingDevices();
+    fetchAndCheckDevices();
   }, [selectedSector]);
 
   const handleOpenImage = async () => {

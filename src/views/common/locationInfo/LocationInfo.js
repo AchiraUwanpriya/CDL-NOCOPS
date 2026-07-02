@@ -1429,21 +1429,31 @@ const PortNavigationApp = () => {
   }, []);
 
   /**
-   * Returns true if the DoPinOne response indicates the device is DOWN.
-   * "Successfully Ping!!" → active (up)
-   * "Ping Failed!!"       → inactive (down)
+   * Determines if a machine is DOWN based on the GetMachineStatus API response.
+   * Looks up the device by name in the statusMap (keyed by MachineName, lowercase).
+   * Uses the IsOnline boolean field — the most reliable indicator from the API.
+   * Response fields per entry: { MachineName, LastSeen, IsOnline, Status }
+   *
+   * Rules:
+   *  - IsOnline: true                      → active (not down)
+   *  - IsOnline: false, Status: "Shutdown" → intentionally off, NOT counted as down
+   *  - IsOnline: false, other Status       → inactive/down
+   *  - not found in status map             → untracked, NOT counted as down
    */
-  const isPingDown = (pingResult) => {
-    const result = (pingResult.Result || '').trim();
-    if (result === 'Successfully Ping!!') return false; // active
-    if (result === 'Ping Failed!!')       return true;  // inactive
-    // Fallback: treat unrecognised / empty result as down
-    return true;
+  const isMachineDown = (deviceName, statusMap) => {
+    if (!deviceName || !statusMap) return false;
+    const entry = statusMap[deviceName.trim().toLowerCase()];
+    if (!entry) return false; // not tracked by GetMachineStatus → do not count as down
+    if (entry.IsOnline === true) return false; // online → active
+    const status = (entry.Status || '').trim().toLowerCase();
+    if (status === 'shutdown') return false; // intentionally shut down → not a failure
+    return true; // explicitly offline (not shutdown) → down
   };
 
   /**
-   * For each building, fetch its devices via GetComDetails and ping each device IP
-   * using DoPinOne. If any device is down, mark the location as 'down' (red).
+   * Fetches all machine statuses from GetMachineStatus in one call, then
+   * for each building fetches its devices via GetComDetails and cross-references
+   * the status map. If any device is down, marks the location as 'down' (red).
    */
   const pingAllLocations = async (sectorsData) => {
     if (!sectorsData || sectorsData.length === 0) return;
@@ -1466,7 +1476,21 @@ const PortNavigationApp = () => {
     });
     setLocationPingStatus(initialStatus);
 
-    // Process each building in parallel
+    // --- Single bulk call to GetMachineStatus ---
+    let statusMap = {};
+    try {
+      const machineStatusData = await DeviceInfoService.GetMachineStatus();
+      if (machineStatusData && machineStatusData.ResultSet) {
+        machineStatusData.ResultSet.forEach((m) => {
+          const name = (m.MachineName || m.ComputerName || '').trim().toLowerCase();
+          if (name) statusMap[name] = m;
+        });
+      }
+    } catch (err) {
+      console.warn('[GetMachineStatus] Failed to fetch bulk machine status:', err);
+    }
+
+    // Process each building in parallel using the status map
     buildingIds.forEach(async (buildCode) => {
       const sectors = buildingMap[buildCode];
 
@@ -1488,23 +1512,13 @@ const PortNavigationApp = () => {
               if (devData.StatusCode === 200 && devData.ResultSet && devData.ResultSet.length > 0) {
                 const devices = devData.ResultSet;
 
-                // Ping all devices in this sector in parallel
-                const pingPromises = devices.map(async (device) => {
-                  const deviceName = device.ComputerName || device.ComputerCode;
-                  if (!deviceName) return { isDown: false }; // skip devices with no name
-
-                  try {
-                    const pingResult = await DeviceInfoService.DoPinOne(deviceName);
-                    return { isDown: isPingDown(pingResult) };
-                  } catch (err) {
-                    console.warn(`[LocationMap DoPinOne] ${deviceName} failed:`, err);
-                    return { isDown: true };
-                  }
-                });
-
-                const pingResults = await Promise.all(pingPromises);
+                // Cross-reference each device against the bulk status map
                 const sectorTotal = devices.length;
-                const sectorDown = pingResults.filter((r) => r.isDown).length;
+                const sectorDown = devices.filter((device) => {
+                  const deviceName = device.ComputerName || device.ComputerCode;
+                  return isMachineDown(deviceName, statusMap);
+                }).length;
+                // Active count includes all devices except the genuinely down ones
                 const sectorActive = sectorTotal - sectorDown;
 
                 // Update this sector's counts in allSectorsData
@@ -1515,6 +1529,7 @@ const PortNavigationApp = () => {
                         ...s,
                         ComputerCount: sectorTotal,
                         ActiveCount: sectorActive,
+                        DownCount: sectorDown, // genuinely offline (not shutdown, not untracked)
                       };
                     }
                     return s;
@@ -1527,7 +1542,7 @@ const PortNavigationApp = () => {
                 };
               }
             } catch (sectorErr) {
-              console.warn(`Error fetching/pinging devices for sector ${sector.Flo_No}:`, sectorErr);
+              console.warn(`Error fetching devices for sector ${sector.Flo_No}:`, sectorErr);
             }
             return { hasDevice: false, hasDown: false };
           })
@@ -1542,7 +1557,7 @@ const PortNavigationApp = () => {
           [buildCode]: hasAnyDevice ? (hasAnyDown ? 'down' : 'up') : 'unknown',
         }));
       } catch (err) {
-        console.warn(`Error pinging location ${buildCode}:`, err);
+        console.warn(`Error processing location ${buildCode}:`, err);
         setLocationPingStatus((prev) => ({ ...prev, [buildCode]: 'unknown' }));
       }
     });
@@ -1552,17 +1567,19 @@ const PortNavigationApp = () => {
     const dockSectors = allSectorsData.filter((sector) => sector.Build_Code === dockId);
     let totalCount = 0;
     let activeCount = 0;
+    let downCount = 0;
 
     dockSectors.forEach((sector) => {
       totalCount += Number(sector.ComputerCount || 0);
       activeCount += Number(sector.ActiveCount !== undefined ? sector.ActiveCount : (sector.ComputerCount || 0));
+      downCount += Number(sector.DownCount || 0); // only genuinely offline (not shutdown/untracked)
     });
 
-    return { totalCount, activeCount };
+    return { totalCount, activeCount, downCount };
   };
 
   /**
-   * Returns the marker color for a dock based on DoPinOne ping results.
+   * Returns the marker color for a dock based on GetMachineStatus results.
    * - 'down'    → red  (#f44336)
    * - 'up'      → green (#4caf50)
    * - 'loading' → blue (default)
@@ -2438,7 +2455,7 @@ const PortNavigationApp = () => {
                 const isSelected = selectedDock?.id === dock.id;
                 const isHovered = hoveredDock === dock.id;
                 const stats = getDockStats(dock.id);
-                const inactiveCount = stats.totalCount - stats.activeCount;
+                const inactiveCount = stats.downCount; // only genuinely offline devices (excludes shutdown & untracked)
 
                 return (
                   <Box
@@ -2455,7 +2472,7 @@ const PortNavigationApp = () => {
                     }}
                   >
                      {/* Always visible inactive devices count tooltip */}
-                    {stats.totalCount > 0 && (
+                    {stats.totalCount > 0 && inactiveCount > 0 && (
                       <Box
                         sx={{
                           position: 'absolute',
@@ -2955,12 +2972,14 @@ const PortNavigationApp = () => {
           DisplayName: sector.Flo_Code === '0' ? 'Ground Floor' : `${sector.Flo_Code} Floor`,
           ComputerCount: 0,
           ActiveCount: 0,
+          DownCount: 0,
           sectors: [],
         };
       }
 
       acc[key].ComputerCount += Number(sector.ComputerCount || 0);
       acc[key].ActiveCount += Number(sector.ActiveCount !== undefined ? sector.ActiveCount : (sector.ComputerCount || 0));
+      acc[key].DownCount += Number(sector.DownCount || 0); // genuinely offline only
       acc[key].sectors.push(sector);
 
       return acc;
@@ -3030,7 +3049,7 @@ const PortNavigationApp = () => {
             {formattedFloors.map((floor) => {
               const activeCount = floor.ActiveCount;
               const totalCount = floor.ComputerCount;
-              const inactiveCount = totalCount - activeCount;
+              const inactiveCount = Number(floor.DownCount || 0); // genuinely offline only (excludes shutdown & untracked)
 
               return (
                 <Grid item xs={12} sm={6} md={3} key={floor.Flo_No}>
@@ -3130,7 +3149,7 @@ const PortNavigationApp = () => {
                           </Typography>
                         </Box>
                         <Typography variant="body2" color="#ef4444">
-                          {totalCount - activeCount}
+                          {inactiveCount}
                         </Typography>
                       </Box>
 
@@ -3228,7 +3247,7 @@ const PortNavigationApp = () => {
             {filteredSectors.map((sector) => {
               const totalCount = Number(sector.ComputerCount || 0);
               const activeCount = Number(sector.ActiveCount !== undefined ? sector.ActiveCount : (sector.ComputerCount || 0));
-              const inactiveCount = totalCount - activeCount;
+              const inactiveCount = Number(sector.DownCount || 0); // genuinely offline only (excludes shutdown & untracked)
 
               return (
                 <Grid item xs={12} sm={6} md={4} lg={3} key={`${sector.Flo_No}-${sector.Cat_CodeB}`}>
