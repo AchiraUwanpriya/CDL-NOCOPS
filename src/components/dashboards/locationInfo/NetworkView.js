@@ -647,7 +647,12 @@ const NetworkView = ({
         devices.forEach((device) => {
           const deviceName = device.ComputerName || device.ComputerCode;
           if (!deviceName) return;
-          updatedStatus[deviceName] = isMachineDown(deviceName, statusMap) ? 'down' : 'up';
+          const nameKey = deviceName.trim().toLowerCase();
+          if (statusMap && nameKey in statusMap) {
+            updatedStatus[deviceName] = isMachineDown(deviceName, statusMap) ? 'down' : 'up';
+          } else {
+            updatedStatus[deviceName] = 'not_available';
+          }
         });
         setDevicePingStatus(updatedStatus);
       } catch (err) {
@@ -749,138 +754,163 @@ const NetworkView = ({
     setOpenDetails(true);
   };
 
-  const DeviceNode = ({ device }) => {
-    const isPrinter = (device.Com_Type || '').toLowerCase().includes('printer');
-    const pingStatus = getDevicePingStatus(device);
-    const isDown = pingStatus === 'down';
-    const isLoading = pingStatus === 'loading';
+    const DeviceNode = ({ device }) => {
+      const isPrinter = (device.Com_Type || '').toLowerCase().includes('printer');
+      const pingStatus = getDevicePingStatus(device);
+      const isDown = pingStatus === 'down';
+      const isLoading = pingStatus === 'loading';
+      const isNotAvailable = pingStatus === 'not_available';
 
-    // Indicator dot color: red if down, blinking grey if loading, green if up
-    const indicatorColor = isDown ? '#ef4444' : isLoading ? '#9ca3af' : '#10b981';
-    // Icon background: dim red tint if down
-    const iconBg = isDown
-      ? 'linear-gradient(135deg, #7f1d1d, #ef444488)'
-      : 'linear-gradient(135deg, #3b82f6, #3b82f688)';
+      // Indicator dot color: red if down, blinking grey if loading, grey if not_available, green if up
+      const indicatorColor = isDown ? '#ef4444' : (isLoading || isNotAvailable) ? '#94a3b8' : '#10b981';
+      // Icon background: dim red tint if down, slate gray if not available, blue if active/up
+      const iconBg = isDown
+        ? 'linear-gradient(135deg, #7f1d1d, #ef444488)'
+        : isNotAvailable
+        ? 'linear-gradient(135deg, #475569, #64748b)'
+        : 'linear-gradient(135deg, #3b82f6, #3b82f688)';
 
-    return (
-      <Tooltip
-        title={
-          <Box>
-            <Typography variant="body2" fontWeight="bold">
-              {device.ComputerName || device.ComputerCode}
-            </Typography>
-            <Typography variant="caption" display="block">
-              IP: {device.IP_Addres || device.Com_IP || device.ip || device.IpAddress || 'N/A'}
-            </Typography>
-            <Typography
-              variant="caption"
-              display="block"
-              sx={{
-                color: isDown ? '#ff6b6b' : isLoading ? '#d1d5db' : '#4ade80',
-                fontWeight: 'bold',
-              }}
-            >
-              Ping: {isDown ? '🔴 Inactive (Device Down)' : isLoading ? '⏳ Checking...' : '🟢 Active'}
-            </Typography>
-          </Box>
-        }
-        arrow
-        placement="top"
-      >
-        <Box
-          onClick={() => handleDeviceClick(device)}
-          sx={{
-            position: 'absolute',
-            top: device.position.top,
-            left: device.position.left,
-            transform: `translate(-50%, -50%) scale(${device.scale})`,
-            transformOrigin: 'center',
-            cursor: 'pointer',
-            opacity: isDown ? 0.75 : 1,
-            '&:hover': {
-              transform: `translate(-50%, -50%) scale(${device.scale * 1.1})`,
-              zIndex: 1000,
-              opacity: 1,
-            },
-            transition: 'opacity 0.3s ease',
-          }}
-        >
-          <Box
-            sx={{
-              borderRadius: 2,
-              p: 1.5,
-              minWidth: 120,
-              textAlign: 'center',
-              backdropFilter: 'blur(10px)',
-              border: isDown ? '1px solid rgba(239,68,68,0.5)' : '1px solid transparent',
-              background: isDown ? 'rgba(127,29,29,0.2)' : 'transparent',
-              borderRadius: 2,
-            }}
-          >
-            <Box sx={{ display: 'inline-block', mb: 1, position: 'relative' }}>
-              <Box
+      return (
+        <Tooltip
+          title={
+            <Box>
+              <Typography variant="body2" fontWeight="bold">
+                {device.ComputerName || device.ComputerCode}
+              </Typography>
+              <Typography variant="caption" display="block">
+                IP: {device.IP_Addres || device.Com_IP || device.ip || device.IpAddress || 'N/A'}
+              </Typography>
+              <Typography
+                variant="caption"
+                display="block"
                 sx={{
-                  width: 48,
-                  height: 48,
-                  background: iconBg,
-                  borderRadius: 2,
-                  display: 'flex',
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                  mx: 'auto',
-                }}
-              >
-                {isPrinter ? (
-                  <Print sx={{ color: isDown ? '#fca5a5' : 'white', fontSize: 24 }} />
-                ) : (
-                  <Computer sx={{ color: isDown ? '#fca5a5' : 'white', fontSize: 24 }} />
-                )}
-              </Box>
-              {/* Live ping status indicator dot */}
-              <Box
-                sx={{
-                  position: 'absolute',
-                  top: -4,
-                  right: -4,
-                  width: 16,
-                  height: 16,
-                  background: indicatorColor,
-                  borderRadius: '50%',
-                  border: '2px solid white',
-                  animation: isLoading ? 'blink 1s infinite' : 'none',
-                  '@keyframes blink': {
-                    '0%, 100%': { opacity: 1 },
-                    '50%': { opacity: 0.3 },
-                  },
-                }}
-              />
-            </Box>
-            <Typography
-              variant="caption"
-              fontWeight="bold"
-              display="block"
-              sx={{ color: isDown ? '#fca5a5' : 'white' }}
-            >
-              {device.ComputerName || device.ComputerCode}
-            </Typography>
-            <Typography variant="caption" color="primary.light" display="block">
-              {device.Com_Type || (isPrinter ? 'Printer' : 'PC')}
-            </Typography>
-            {/* Inactive badge */}
-            {isDown && (
-              <Chip
-                label="Inactive"
-                size="small"
-                sx={{
-                  mt: 0.5,
-                  height: 16,
-                  fontSize: '9px',
-                  backgroundColor: 'rgba(239,68,68,0.8)',
-                  color: 'white',
+                  color: isDown ? '#ff6b6b' : isLoading ? '#d1d5db' : isNotAvailable ? '#cbd5e1' : '#4ade80',
                   fontWeight: 'bold',
                 }}
-              />
-            )}
+              >
+                Ping: {isDown ? '🔴 Inactive (Device Down)' : isLoading ? '⏳ Checking...' : isNotAvailable ? '⚪ Not Available (Untracked)' : '🟢 Active'}
+              </Typography>
+            </Box>
+          }
+          arrow
+          placement="top"
+        >
+          <Box
+            onClick={() => handleDeviceClick(device)}
+            sx={{
+              position: 'absolute',
+              top: device.position.top,
+              left: device.position.left,
+              transform: `translate(-50%, -50%) scale(${device.scale})`,
+              transformOrigin: 'center',
+              cursor: 'pointer',
+              opacity: isDown ? 0.75 : isNotAvailable ? 0.6 : 1,
+              '&:hover': {
+                transform: `translate(-50%, -50%) scale(${device.scale * 1.1})`,
+                zIndex: 1000,
+                opacity: 1,
+              },
+              transition: 'opacity 0.3s ease',
+            }}
+          >
+            <Box
+              sx={{
+                borderRadius: 2,
+                p: 1.5,
+                minWidth: 120,
+                textAlign: 'center',
+                backdropFilter: 'blur(10px)',
+                border: isDown 
+                  ? '1px solid rgba(239,68,68,0.5)' 
+                  : isNotAvailable 
+                  ? '1px solid rgba(148,163,184,0.4)' 
+                  : '1px solid transparent',
+                background: isDown 
+                  ? 'rgba(127,29,29,0.2)' 
+                  : isNotAvailable 
+                  ? 'rgba(71,85,105,0.2)' 
+                  : 'transparent',
+                borderRadius: 2,
+              }}
+            >
+              <Box sx={{ display: 'inline-block', mb: 1, position: 'relative' }}>
+                <Box
+                  sx={{
+                    width: 48,
+                    height: 48,
+                    background: iconBg,
+                    borderRadius: 2,
+                    display: 'flex',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    mx: 'auto',
+                  }}
+                >
+                  {isPrinter ? (
+                    <Print sx={{ color: isDown ? '#fca5a5' : isNotAvailable ? '#cbd5e1' : 'white', fontSize: 24 }} />
+                  ) : (
+                    <Computer sx={{ color: isDown ? '#fca5a5' : isNotAvailable ? '#cbd5e1' : 'white', fontSize: 24 }} />
+                  )}
+                </Box>
+                {/* Live ping status indicator dot */}
+                <Box
+                  sx={{
+                    position: 'absolute',
+                    top: -4,
+                    right: -4,
+                    width: 16,
+                    height: 16,
+                    background: indicatorColor,
+                    borderRadius: '50%',
+                    border: '2px solid white',
+                    animation: isLoading ? 'blink 1s infinite' : 'none',
+                    '@keyframes blink': {
+                      '0%, 100%': { opacity: 1 },
+                      '50%': { opacity: 0.3 },
+                    },
+                  }}
+                />
+              </Box>
+              <Typography
+                variant="caption"
+                fontWeight="bold"
+                display="block"
+                sx={{ color: isDown ? '#fca5a5' : isNotAvailable ? '#cbd5e1' : 'white' }}
+              >
+                {device.ComputerName || device.ComputerCode}
+              </Typography>
+              <Typography variant="caption" color="primary.light" display="block">
+                {device.Com_Type || (isPrinter ? 'Printer' : 'PC')}
+              </Typography>
+              {/* Status badge */}
+              {isDown && (
+                <Chip
+                  label="Inactive"
+                  size="small"
+                  sx={{
+                    mt: 0.5,
+                    height: 16,
+                    fontSize: '9px',
+                    backgroundColor: 'rgba(239,68,68,0.8)',
+                    color: 'white',
+                    fontWeight: 'bold',
+                  }}
+                />
+              )}
+              {isNotAvailable && (
+                <Chip
+                  label="Not Available"
+                  size="small"
+                  sx={{
+                    mt: 0.5,
+                    height: 16,
+                    fontSize: '9px',
+                    backgroundColor: 'rgba(100,116,139,0.8)',
+                    color: 'white',
+                    fontWeight: 'bold',
+                  }}
+                />
+              )}
           </Box>
         </Box>
       </Tooltip>
