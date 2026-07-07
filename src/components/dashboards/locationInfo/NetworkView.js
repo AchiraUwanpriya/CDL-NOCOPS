@@ -571,6 +571,8 @@ const NetworkView = ({
   selectedDock,
   selectedFloor,
   selectedSector,
+  highlightedDeviceName,
+  setHighlightedDeviceName,
 }) => {
   const [networkDevices, setNetworkDevices] = useState([]);
   const [openImage, setOpenImage] = useState(false);
@@ -657,6 +659,21 @@ const NetworkView = ({
 
     fetchAndCheckDevices();
   }, [selectedSector]);
+
+  // Auto-select highlighted device from search
+  useEffect(() => {
+    if (highlightedDeviceName && networkDevices.length > 0) {
+      const matched = networkDevices.find(
+        (d) =>
+          (d.ComputerName || d.ComputerCode || '').trim().toLowerCase() ===
+          highlightedDeviceName.trim().toLowerCase()
+      );
+      if (matched) {
+        setSelectedDevice(matched);
+        setOpenDetails(true);
+      }
+    }
+  }, [highlightedDeviceName, networkDevices]);
 
   const handleOpenImage = async () => {
     if (!selectedSector?.Cat_CodeB) return;
@@ -749,11 +766,21 @@ const NetworkView = ({
     setOpenDetails(true);
   };
 
+  const handleCloseDetails = () => {
+    setOpenDetails(false);
+    if (setHighlightedDeviceName) {
+      setHighlightedDeviceName(null);
+    }
+  };
+
   const DeviceNode = ({ device }) => {
     const isPrinter = (device.Com_Type || '').toLowerCase().includes('printer');
     const pingStatus = getDevicePingStatus(device);
     const isDown = pingStatus === 'down';
     const isLoading = pingStatus === 'loading';
+    const isHighlighted = highlightedDeviceName &&
+      (device.ComputerName || device.ComputerCode || '').trim().toLowerCase() ===
+      highlightedDeviceName.trim().toLowerCase();
 
     // Indicator dot color: red if down, blinking grey if loading, green if up
     const indicatorColor = isDown ? '#ef4444' : isLoading ? '#9ca3af' : '#10b981';
@@ -796,7 +823,7 @@ const NetworkView = ({
             transform: `translate(-50%, -50%) scale(${device.scale})`,
             transformOrigin: 'center',
             cursor: 'pointer',
-            opacity: isDown ? 0.75 : 1,
+            opacity: isDown && !isHighlighted ? 0.75 : 1,
             '&:hover': {
               transform: `translate(-50%, -50%) scale(${device.scale * 1.1})`,
               zIndex: 1000,
@@ -812,9 +839,22 @@ const NetworkView = ({
               minWidth: 120,
               textAlign: 'center',
               backdropFilter: 'blur(10px)',
-              border: isDown ? '1px solid rgba(239,68,68,0.5)' : '1px solid transparent',
-              background: isDown ? 'rgba(127,29,29,0.2)' : 'transparent',
-              borderRadius: 2,
+              border: isHighlighted
+                ? '2px solid #ff9800'
+                : isDown
+                ? '1px solid rgba(239,68,68,0.5)'
+                : '1px solid transparent',
+              background: isHighlighted
+                ? 'rgba(255,152,0,0.15)'
+                : isDown
+                ? 'rgba(127,29,29,0.2)'
+                : 'transparent',
+              boxShadow: isHighlighted ? '0 0 15px 4px rgba(255,152,0,0.6)' : 'none',
+              animation: isHighlighted ? 'highlightPulse 2s infinite ease-in-out' : 'none',
+              '@keyframes highlightPulse': {
+                '0%, 100%': { boxShadow: '0 0 12px 2px rgba(255,152,0,0.5)' },
+                '50%': { boxShadow: '0 0 20px 8px rgba(255,152,0,0.8)' },
+              },
             }}
           >
             <Box sx={{ display: 'inline-block', mb: 1, position: 'relative' }}>
@@ -1060,7 +1100,7 @@ const NetworkView = ({
         </Dialog>
 
      
-        <Dialog open={openDetails} onClose={() => setOpenDetails(false)} maxWidth="md" fullWidth>
+        <Dialog open={openDetails} onClose={handleCloseDetails} maxWidth="md" fullWidth>
           <DialogTitle>Device Details</DialogTitle>
           <DialogContent>
             {selectedDevice && (

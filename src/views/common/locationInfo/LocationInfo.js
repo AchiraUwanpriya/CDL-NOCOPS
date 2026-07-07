@@ -1402,6 +1402,9 @@ const PortNavigationApp = () => {
 
   // locationPingStatus: { [dockId]: 'up' | 'down' | 'loading' | 'unknown' }
   const [locationPingStatus, setLocationPingStatus] = useState({});
+  const [allDevices, setAllDevices] = useState([]);
+  const [searchType, setSearchType] = useState('locations'); // 'locations' | 'devices'
+  const [highlightedDeviceName, setHighlightedDeviceName] = useState(null);
 
   useEffect(() => {
     const fetchSectors = async () => {
@@ -1475,6 +1478,7 @@ const PortNavigationApp = () => {
       initialStatus[id] = 'loading';
     });
     setLocationPingStatus(initialStatus);
+    setAllDevices([]);
 
     // --- Single bulk call to GetMachineStatus ---
     let statusMap = {};
@@ -1511,6 +1515,27 @@ const PortNavigationApp = () => {
 
               if (devData.StatusCode === 200 && devData.ResultSet && devData.ResultSet.length > 0) {
                 const devices = devData.ResultSet;
+
+                // Index devices for global search
+                const devicesWithLocation = devices.map((d) => ({
+                  ...d,
+                  Build_Code: sector.Build_Code,
+                  Flo_No: sector.Flo_No,
+                  Flo_Code: sector.Flo_Code,
+                  Cat_CodeB: sector.Cat_CodeB,
+                  Flo_Name: sector.Flo_Name,
+                }));
+                setAllDevices((prev) => {
+                  const filteredPrev = prev.filter(
+                    (p) =>
+                      !devicesWithLocation.some(
+                        (d) =>
+                          (d.ComputerName || d.ComputerCode || '').trim().toLowerCase() ===
+                          (p.ComputerName || p.ComputerCode || '').trim().toLowerCase()
+                      )
+                  );
+                  return [...filteredPrev, ...devicesWithLocation];
+                });
 
                 // Cross-reference each device against the bulk status map
                 const sectorTotal = devices.length;
@@ -2140,6 +2165,41 @@ const PortNavigationApp = () => {
     setPcDetailsOpen(true);
   };
 
+  const handleSearchDeviceClick = (device) => {
+    // 1. Find the corresponding dock/building
+    const dock = docks.find((d) => d.id === device.Build_Code);
+    if (!dock) {
+      console.warn('Dock not found for build code:', device.Build_Code);
+      return;
+    }
+
+    // 2. Prepare floor object
+    const floor = {
+      Flo_Code: device.Flo_Code,
+      Flo_No: device.Flo_No,
+      Build_Code: device.Build_Code,
+      DisplayName: device.Flo_Code === '0' ? 'Ground Floor' : `${device.Flo_Code} Floor`,
+    };
+
+    // 3. Find or construct sector object
+    const sector = allSectorsData.find(
+      (s) => s.Flo_No === device.Flo_No && s.Cat_CodeB === device.Cat_CodeB
+    ) || {
+      Flo_No: device.Flo_No,
+      Flo_Code: device.Flo_Code,
+      Flo_Name: device.Flo_Name,
+      Cat_CodeB: device.Cat_CodeB,
+      Build_Code: device.Build_Code,
+    };
+
+    // 4. Set state to navigate to the sector network view
+    setSelectedDock(dock);
+    setSelectedFloor(floor);
+    setSelectedSector(sector);
+    setHighlightedDeviceName(device.ComputerName || device.ComputerCode);
+    setCurrentView('network');
+  };
+
   const handleBack = () => {
     if (currentView === 'floors') {
       setCurrentView('port');
@@ -2179,12 +2239,26 @@ const PortNavigationApp = () => {
 
     // Filter items based on current view
     let sidebarItems = [];
+    let filteredDevices = [];
     let sidebarTitle = 'Building Locations';
     let sidebarIcon = null;
     let hoveredState = null;
     let setHoveredState = null;
 
-    if (showSwitches) {
+    if (searchType === 'devices') {
+      const query = searchQuery.trim().toLowerCase();
+      filteredDevices = query
+        ? allDevices.filter((dev) => {
+            const name = (dev.ComputerName || dev.ComputerCode || '').toLowerCase();
+            const ip = (dev.IP_Addres || dev.Com_IP || dev.ip || dev.IpAddress || '').toLowerCase();
+            return name.includes(query) || ip.includes(query);
+          })
+        : [];
+      sidebarTitle = 'Device Search';
+      sidebarIcon = <Computer sx={{ mr: 1, fontSize: 16, color: '#1976d2' }} />;
+      hoveredState = null;
+      setHoveredState = () => {};
+    } else if (showSwitches) {
       sidebarItems = dockswitches.filter((switchItem) =>
         switchItem.name.toLowerCase().includes(searchQuery.toLowerCase()),
       );
@@ -2256,12 +2330,64 @@ const PortNavigationApp = () => {
             </Typography>
           </Box>
 
+          {/* Search Type Selector */}
+          <Box sx={{ display: 'flex', borderBottom: '1px solid #e0e0e0', p: 0.5, backgroundColor: '#f9f9f9' }}>
+            <Button
+              size="small"
+              fullWidth
+              variant={searchType === 'locations' ? 'contained' : 'text'}
+              onClick={() => {
+                setSearchType('locations');
+                setSearchQuery('');
+              }}
+              sx={{
+                borderRadius: '4px',
+                textTransform: 'none',
+                fontWeight: 'bold',
+                fontSize: '12px',
+                py: 0.5,
+                boxShadow: searchType === 'locations' ? 1 : 0,
+                backgroundColor: searchType === 'locations' ? '#1976d2' : 'transparent',
+                color: searchType === 'locations' ? 'white' : '#555',
+                '&:hover': {
+                  backgroundColor: searchType === 'locations' ? '#1565c0' : 'rgba(0,0,0,0.04)',
+                }
+              }}
+            >
+              Locations
+            </Button>
+            <Button
+              size="small"
+              fullWidth
+              variant={searchType === 'devices' ? 'contained' : 'text'}
+              onClick={() => {
+                setSearchType('devices');
+                setSearchQuery('');
+              }}
+              sx={{
+                borderRadius: '4px',
+                textTransform: 'none',
+                fontWeight: 'bold',
+                fontSize: '12px',
+                py: 0.5,
+                boxShadow: searchType === 'devices' ? 1 : 0,
+                backgroundColor: searchType === 'devices' ? '#1976d2' : 'transparent',
+                color: searchType === 'devices' ? 'white' : '#555',
+                '&:hover': {
+                  backgroundColor: searchType === 'devices' ? '#1565c0' : 'rgba(0,0,0,0.04)',
+                }
+              }}
+            >
+              Devices
+            </Button>
+          </Box>
+
           {/* Search Bar */}
           <Box sx={{ p: 1.2, borderBottom: '1px solid #f0f0f0' }}>
             <TextField
               size="small"
               fullWidth
-              placeholder={`Search ${sidebarTitle.toLowerCase()}...`}
+              placeholder={searchType === 'devices' ? 'Search devices by name or IP...' : `Search ${sidebarTitle.toLowerCase()}...`}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               InputProps={{
@@ -2288,48 +2414,134 @@ const PortNavigationApp = () => {
               },
             }}
           >
-            {sidebarItems.map((item) => (
-              <Tooltip key={item.id} title={item.name} arrow placement="right">
-                <Box
-                  sx={{
-                    p: 1.5,
-                    pl: 2,
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    backgroundColor: hoveredState === item.id ? '#e3f2fd' : 'transparent',
-                    borderLeft: hoveredState === item.id ? '4px solid #1976d2' : '4px solid transparent',
-                    '&:hover': {
-                      backgroundColor: '#a19d9dff',
-                      transform: 'translateX(4px)',
-                    },
-                    transition: 'all 0.25s ease',
-                  }}
-                  onClick={() => {
-                    if (showSwitches) console.log('Switch clicked:', item.name);
-                    else if (showPrinters) console.log('Printer clicked:', item.name);
-                    else if (showUps) console.log('UPS clicked:', item.name);
-                    else handleDockClick(item);
-                  }}
-                  onMouseEnter={() => setHoveredState(item.id)}
-                  onMouseLeave={() => setHoveredState(null)}
-                >
-                  {sidebarIcon}
-                  <Typography
-                    variant="body2"
-                    sx={{
-                      fontSize: '14px',
-                      fontWeight: hoveredState === item.id ? 600 : 400,
-                      color: hoveredState === item.id ? '#1976d2' : '#424242',
-                    }}
-                  >
-                    {item.name}
-                  </Typography>
-                </Box>
-              </Tooltip>
-            ))}
+            {searchType === 'devices' ? (
+              filteredDevices.map((dev, index) => {
+                const devName = dev.ComputerName || dev.ComputerCode || 'Unknown Device';
+                const devIp = dev.IP_Addres || dev.Com_IP || dev.ip || dev.IpAddress || 'No IP';
+                const isPrinter = (dev.Com_Type || '').toLowerCase().includes('printer');
+                
+                const dock = docks.find((d) => d.id === dev.Build_Code);
+                const dockName = dock ? (dock.description || dock.name) : dev.Build_Code;
+                const floorText = dev.Flo_Code === '0' ? 'Ground Floor' : `${dev.Flo_Code} Floor`;
+                const locationLabel = `${dockName} - ${floorText} - ${dev.Flo_Name}`;
+                const devKey = `${devName}-${devIp}-${index}`;
 
-            {sidebarItems.length === 0 && (
+                return (
+                  <Tooltip key={devKey} title={locationLabel} arrow placement="right">
+                    <Box
+                      sx={{
+                        p: 1.5,
+                        pl: 2,
+                        cursor: 'pointer',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        justifyContent: 'center',
+                        borderLeft: '4px solid transparent',
+                        borderBottom: '1px solid #f3f4f6',
+                        '&:hover': {
+                          backgroundColor: '#f3f4f6',
+                          borderLeft: '4px solid #1976d2',
+                          transform: 'translateX(4px)',
+                        },
+                        transition: 'all 0.25s ease',
+                      }}
+                      onClick={() => handleSearchDeviceClick(dev)}
+                    >
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.5 }}>
+                        {isPrinter ? (
+                          <Print sx={{ fontSize: 16, color: '#1976d2' }} />
+                        ) : (
+                          <Computer sx={{ fontSize: 16, color: '#1976d2' }} />
+                        )}
+                        <Typography
+                          variant="body2"
+                          sx={{
+                            fontSize: '14px',
+                            fontWeight: 600,
+                            color: '#1e293b',
+                          }}
+                        >
+                          {devName}
+                        </Typography>
+                      </Box>
+                      <Typography variant="caption" color="text.secondary" sx={{ fontSize: '11px', pl: 2.5 }}>
+                        IP: {devIp}
+                      </Typography>
+                      <Typography variant="caption" color="primary.light" sx={{ fontSize: '10px', pl: 2.5, fontWeight: 500 }}>
+                        {locationLabel}
+                      </Typography>
+                    </Box>
+                  </Tooltip>
+                );
+              })
+            ) : (
+              sidebarItems.map((item) => (
+                <Tooltip key={item.id} title={item.name} arrow placement="right">
+                  <Box
+                    sx={{
+                      p: 1.5,
+                      pl: 2,
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      backgroundColor: hoveredState === item.id ? '#e3f2fd' : 'transparent',
+                      borderLeft: hoveredState === item.id ? '4px solid #1976d2' : '4px solid transparent',
+                      '&:hover': {
+                        backgroundColor: '#a19d9dff',
+                        transform: 'translateX(4px)',
+                      },
+                      transition: 'all 0.25s ease',
+                    }}
+                    onClick={() => {
+                      if (showSwitches) console.log('Switch clicked:', item.name);
+                      else if (showPrinters) console.log('Printer clicked:', item.name);
+                      else if (showUps) console.log('UPS clicked:', item.name);
+                      else handleDockClick(item);
+                    }}
+                    onMouseEnter={() => setHoveredState(item.id)}
+                    onMouseLeave={() => setHoveredState(null)}
+                  >
+                    {sidebarIcon}
+                    <Typography
+                      variant="body2"
+                      sx={{
+                        fontSize: '14px',
+                        fontWeight: hoveredState === item.id ? 600 : 400,
+                        color: hoveredState === item.id ? '#1976d2' : '#424242',
+                      }}
+                    >
+                      {item.name}
+                    </Typography>
+                  </Box>
+                </Tooltip>
+              ))
+            )}
+
+            {searchType === 'devices' && searchQuery.trim() !== '' && filteredDevices.length === 0 && (
+              <Typography variant="body2" sx={{ color: 'gray', p: 2, textAlign: 'center' }}>
+                No devices found
+              </Typography>
+            )}
+
+            {searchType === 'devices' && searchQuery.trim() === '' && (
+              <Box sx={{ p: 3, textAlign: 'center' }}>
+                <Computer sx={{ fontSize: 40, color: '#94a3b8', mb: 1, mx: 'auto' }} />
+                <Typography variant="body2" color="textSecondary" sx={{ fontSize: '13px' }}>
+                  Type a device name or IP to search
+                </Typography>
+                {allDevices.length > 0 ? (
+                  <Typography variant="caption" color="textSecondary" display="block" sx={{ mt: 1, fontSize: '11px', color: '#94a3b8' }}>
+                    Indexing complete ({allDevices.length} devices found)
+                  </Typography>
+                ) : (
+                  <Typography variant="caption" color="textSecondary" display="block" sx={{ mt: 1, fontSize: '11px', color: '#3b82f6' }}>
+                    Indexing devices in background...
+                  </Typography>
+                )}
+              </Box>
+            )}
+
+            {sidebarItems.length === 0 && searchType !== 'devices' && (
               <Typography variant="body2" sx={{ color: 'gray', p: 2, textAlign: 'center' }}>
                 No items found
               </Typography>
@@ -3383,6 +3595,8 @@ const PortNavigationApp = () => {
           devices={devices}
           Flo_No={selectedSector?.Flo_No}
           Cat_CodeB={selectedSector?.Cat_CodeB}
+          highlightedDeviceName={highlightedDeviceName}
+          setHighlightedDeviceName={setHighlightedDeviceName}
         />
       )}
 
