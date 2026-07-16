@@ -48,11 +48,7 @@ const GetUpIPs = () => {
   });
 };
 
-/**
- * Fetches active/inactive status for all machines in one bulk call.
- * Response: { StatusCode: 200, ResultSet: [ { MachineName, LastSeen, IsOnline, Status }, ... ] }
- * Use IsOnline (boolean) — true means active/up, false means inactive/down.
- */
+
 const GetMachineStatus = () => {
   return axios.get('Ping/GetMachineStatus').then((response) => {
     return response.data;
