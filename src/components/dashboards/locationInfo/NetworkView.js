@@ -623,7 +623,7 @@ const NetworkView = ({
       return true; // Fallback for other offline statuses
     };
 
-    const fetchAndCheckDevices = async (isBackground = false) => {
+    const fetchAndCheckDevices = async () => {
       try {
         // Fetch devices for this sector
         const res = await fetch(
@@ -633,15 +633,13 @@ const NetworkView = ({
         const devices = data.ResultSet || [];
         setNetworkDevices(devices);
 
-        if (!isBackground) {
-          // Mark all named devices as loading
-          const initStatus = {};
-          devices.forEach((d) => {
-            const deviceName = d.ComputerName || d.ComputerCode;
-            if (deviceName) initStatus[deviceName] = 'loading';
-          });
-          setDevicePingStatus(initStatus);
-        }
+        // Mark all named devices as loading
+        const initStatus = {};
+        devices.forEach((d) => {
+          const deviceName = d.ComputerName || d.ComputerCode;
+          if (deviceName) initStatus[deviceName] = 'loading';
+        });
+        setDevicePingStatus(initStatus);
 
         // --- Single bulk call to GetMachineStatus ---
         let statusMap = {};
@@ -670,15 +668,7 @@ const NetworkView = ({
       }
     };
 
-    fetchAndCheckDevices(false);
-
-    const intervalId = setInterval(() => {
-      fetchAndCheckDevices(true);
-    }, 60000); // 1 minute
-
-    return () => {
-      clearInterval(intervalId);
-    };
+    fetchAndCheckDevices();
   }, [selectedSector]);
 
   const handleOpenImage = async () => {

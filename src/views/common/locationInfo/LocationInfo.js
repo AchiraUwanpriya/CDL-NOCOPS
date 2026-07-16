@@ -1298,7 +1298,7 @@
 
 
 
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Card,
   CardContent,
@@ -1403,12 +1403,6 @@ const PortNavigationApp = () => {
   // locationPingStatus: { [dockId]: 'up' | 'down' | 'loading' | 'unknown' }
   const [locationPingStatus, setLocationPingStatus] = useState({});
 
-  const allSectorsDataRef = useRef([]);
-
-  useEffect(() => {
-    allSectorsDataRef.current = allSectorsData;
-  }, [allSectorsData]);
-
   useEffect(() => {
     const fetchSectors = async () => {
       try {
@@ -1474,7 +1468,7 @@ const PortNavigationApp = () => {
    * for each building fetches its devices via GetComDetails and cross-references
    * the status map. If any device is down, marks the location as 'down' (red).
    */
-  const pingAllLocations = async (sectorsData, isBackground = false) => {
+  const pingAllLocations = async (sectorsData) => {
     if (!sectorsData || sectorsData.length === 0) return;
 
     // Group sectors by Build_Code to get unique buildings
@@ -1488,14 +1482,12 @@ const PortNavigationApp = () => {
 
     const buildingIds = Object.keys(buildingMap);
 
-    if (!isBackground) {
-      // Mark all as loading initially
-      const initialStatus = {};
-      buildingIds.forEach((id) => {
-        initialStatus[id] = 'loading';
-      });
-      setLocationPingStatus(initialStatus);
-    }
+    // Mark all as loading initially
+    const initialStatus = {};
+    buildingIds.forEach((id) => {
+      initialStatus[id] = 'loading';
+    });
+    setLocationPingStatus(initialStatus);
 
     // --- Single bulk call to GetMachineStatus ---
     let statusMap = {};
@@ -1583,22 +1575,6 @@ const PortNavigationApp = () => {
       }
     });
   };
-
-  const pingAllLocationsRef = useRef(null);
-
-  useEffect(() => {
-    pingAllLocationsRef.current = pingAllLocations;
-  }, [pingAllLocations]);
-
-  useEffect(() => {
-    const intervalId = setInterval(() => {
-      if (allSectorsDataRef.current && allSectorsDataRef.current.length > 0) {
-        pingAllLocationsRef.current(allSectorsDataRef.current, true);
-      }
-    }, 60000); // 1 minute
-
-    return () => clearInterval(intervalId);
-  }, []);
 
   const getDockStats = (dockId) => {
     const dockSectors = allSectorsData.filter((sector) => sector.Build_Code === dockId);
