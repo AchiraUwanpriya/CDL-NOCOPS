@@ -1434,7 +1434,7 @@ const PortNavigationApp = () => {
   /**
   
    *  - IsOnline: true                      → active (not down)
-   *  - IsOnline: false, Status: "Resume Automatic", "Suspend", "Console Disconnect", "Shutdown"
+   *  - IsOnline: false, Status: "ResumeAutomatic", "Resume Automatic", "Suspend", "Console Disconnect", "Shutdown"
    *                                        → active (not counted as down)
    *  - IsOnline: false, Status: ""         → down (red on the map)
    *  - not found in status map             → untracked, NOT counted as down
@@ -1449,8 +1449,10 @@ const PortNavigationApp = () => {
     // Explicitly treated as active even if IsOnline is false:
     if (
       status === 'resume automatic' ||
+      status === 'resumeautomatic' ||
       status === 'suspend' ||
       status === 'console disconnect' ||
+      status === 'consoledisconnect' ||
       status === 'shutdown'
     ) {
       return false;
