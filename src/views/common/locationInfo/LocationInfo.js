@@ -1298,7 +1298,7 @@
 
 
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   Card,
   CardContent,
@@ -1337,9 +1337,6 @@ import SectorIcon from '../../../assets/images/icons/sector.ico';
 import NetworkDigIcon from '../../../assets/images/icons/diagram.ico';
 import NetworkSwitch from '../../../assets/images/icons/network-switch.ico';
 import Switches from '../../../assets/images/icons/switches.ico';
-// Remove these lines if the files don't exist
-// import PrinterIcon from '../../../assets/images/icons/printer.ico';
-// import UpsIcon from '../../../assets/images/icons/ups.ico';
 import SearchIcon from '@mui/icons-material/Search';
 import CloseIcon from '@mui/icons-material/Close';
 import UpsIcon from '../../../assets/images/icons/ups.ico';
@@ -1402,6 +1399,14 @@ const PortNavigationApp = () => {
 
   // locationPingStatus: { [dockId]: 'up' | 'down' | 'loading' | 'unknown' }
   const [locationPingStatus, setLocationPingStatus] = useState({});
+
+  // Caching references for auto-update functionality
+  const sectorDevicesRef = useRef({});
+  const allSectorsDataRef = useRef([]);
+
+  useEffect(() => {
+    allSectorsDataRef.current = allSectorsData;
+  }, [allSectorsData]);
 
   useEffect(() => {
     const fetchSectors = async () => {
@@ -1525,6 +1530,9 @@ const PortNavigationApp = () => {
               if (devData.StatusCode === 200 && devData.ResultSet && devData.ResultSet.length > 0) {
                 const devices = devData.ResultSet;
 
+                // Cache devices list in ref for background refresh
+                sectorDevicesRef.current[`${sector.Flo_No}-${sector.Cat_CodeB}`] = devices;
+
                 // Cross-reference each device against the bulk status map
                 const sectorTotal = devices.length;
                 const sectorDown = devices.filter((device) => {
@@ -1575,6 +1583,85 @@ const PortNavigationApp = () => {
       }
     });
   };
+
+  const refreshStatuses = useCallback(async () => {
+    // --- Single bulk call to GetMachineStatus ---
+    let statusMap = {};
+    try {
+      const machineStatusData = await DeviceInfoService.GetMachineStatus();
+      if (machineStatusData && machineStatusData.ResultSet) {
+        machineStatusData.ResultSet.forEach((m) => {
+          const name = (m.MachineName || m.ComputerName || '').trim().toLowerCase();
+          if (name) statusMap[name] = m;
+        });
+      }
+    } catch (err) {
+      console.warn('[GetMachineStatus] Failed to refresh machine status:', err);
+      return;
+    }
+
+    // Group sectors by Build_Code to determine building statuses
+    const buildingMap = {};
+    allSectorsDataRef.current.forEach((sector) => {
+      if (!buildingMap[sector.Build_Code]) {
+        buildingMap[sector.Build_Code] = [];
+      }
+      buildingMap[sector.Build_Code].push(sector);
+    });
+
+    const buildingIds = Object.keys(buildingMap);
+    const nextLocationPingStatus = {};
+
+    setAllSectorsData((prevSectors) => {
+      const updatedSectors = prevSectors.map((sector) => {
+        const key = `${sector.Flo_No}-${sector.Cat_CodeB}`;
+        const devices = sectorDevicesRef.current[key];
+
+        if (devices && devices.length > 0) {
+          const sectorTotal = devices.length;
+          const sectorDown = devices.filter((device) => {
+            const deviceName = device.ComputerName || device.ComputerCode;
+            return isMachineDown(deviceName, statusMap);
+          }).length;
+          const sectorActive = sectorTotal - sectorDown;
+
+          return {
+            ...sector,
+            ComputerCount: sectorTotal,
+            ActiveCount: sectorActive,
+            DownCount: sectorDown,
+          };
+        }
+        return sector;
+      });
+
+      // Recalculate building status based on the updated sectors counts
+      buildingIds.forEach((buildCode) => {
+        const sectors = updatedSectors.filter((s) => s.Build_Code === buildCode);
+        const hasAnyDevice = sectors.some((s) => s.ComputerCount > 0);
+        const hasAnyDown = sectors.some((s) => (s.DownCount || 0) > 0);
+
+        nextLocationPingStatus[buildCode] = hasAnyDevice ? (hasAnyDown ? 'down' : 'up') : 'unknown';
+      });
+
+      return updatedSectors;
+    });
+
+    // Update location ping status in one batch
+    setLocationPingStatus((prev) => ({
+      ...prev,
+      ...nextLocationPingStatus,
+    }));
+  }, []);
+
+  // Setup periodic background refresh every 1 minute
+  useEffect(() => {
+    const interval = setInterval(() => {
+      refreshStatuses();
+    }, 60000);
+
+    return () => clearInterval(interval);
+  }, [refreshStatuses]);
 
   const getDockStats = (dockId) => {
     const dockSectors = allSectorsData.filter((sector) => sector.Build_Code === dockId);
