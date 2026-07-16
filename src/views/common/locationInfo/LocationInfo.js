@@ -2480,7 +2480,11 @@ const PortNavigationApp = () => {
                       left: dock.x,
                       top: dock.y,
                       transform: 'translate(-50%, -50%)',
-                      zIndex: isSelected ? 20 : 10,
+                      zIndex: isSelected
+                        ? 40
+                        : locationPingStatus[dock.id] === 'down'
+                        ? 30
+                        : 10,
                       display: 'flex',
                       flexDirection: 'column',
                       alignItems: 'center',
@@ -2507,7 +2511,7 @@ const PortNavigationApp = () => {
                           alignItems: 'center',
                           gap: '6px',
                           transition: 'all 0.3s ease',
-                          zIndex: 25,
+                          zIndex: locationPingStatus[dock.id] === 'down' ? 50 : 25,
                           '&::after': {
                             content: '""',
                             position: 'absolute',
