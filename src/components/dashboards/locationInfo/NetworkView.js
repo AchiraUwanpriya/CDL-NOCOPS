@@ -591,15 +591,11 @@ const NetworkView = ({
     if (!selectedSector?.Flo_No || !selectedSector?.Cat_CodeB) return;
 
     /**
-     * Determines if a machine is DOWN based on the GetMachineStatus API response.
-     * Looks up the device by name in the statusMap (keyed by MachineName, lowercase).
-     * Uses the IsOnline boolean field — the most reliable indicator from the API.
-     * Response fields per entry: { MachineName, LastSeen, IsOnline, Status }
-     *
-     * Rules:
+     
      *  - IsOnline: true                         → active (not down)
-     *  - IsOnline: false, Status: "Shutdown"    → intentionally off, NOT counted as down
-     *  - IsOnline: false, other Status          → inactive/down
+     *  - IsOnline: false, Status: "Resume Automatic", "Suspend", "Console Disconnect", "Shutdown"
+     *                                           → active (not counted as down)
+     *  - IsOnline: false, Status: ""            → down (red on the map)
      *  - not found in status map                → untracked, NOT counted as down
      */
     const isMachineDown = (deviceName, statusMap) => {
@@ -608,8 +604,23 @@ const NetworkView = ({
       if (!entry) return false; // not tracked by GetMachineStatus → do not count as down
       if (entry.IsOnline === true) return false; // online → active
       const status = (entry.Status || '').trim().toLowerCase();
-      if (status === 'shutdown') return false; // intentionally shut down → not a failure
-      return true; // explicitly offline (not shutdown) → down
+      
+      // Explicitly treated as active even if IsOnline is false:
+      if (
+        status === 'resume automatic' ||
+        status === 'suspend' ||
+        status === 'console disconnect' ||
+        status === 'shutdown'
+      ) {
+        return false;
+      }
+      
+      // Explicitly offline with no active status -> down
+      if (status === '') {
+        return true;
+      }
+      
+      return true; // Fallback for other offline statuses
     };
 
     const fetchAndCheckDevices = async () => {
