@@ -1327,7 +1327,7 @@ import {
 } from '@mui/icons-material';
 import Map from '../../../assets/images/blueprints/cdlplc.png';
 import Serverroom from '../../../assets/locationType/serverroom.jpg';
-import { Building, Monitor, Wifi, WifiOff } from 'lucide-react';
+import { Building, Monitor, Wifi, WifiOff, HelpCircle } from 'lucide-react';
 import NetworkView from '../../../components/dashboards/locationInfo/NetworkView';
 import { Tooltip } from '@mui/material';
 import { useDispatch } from 'react-redux';
@@ -1341,6 +1341,154 @@ import SearchIcon from '@mui/icons-material/Search';
 import CloseIcon from '@mui/icons-material/Close';
 import UpsIcon from '../../../assets/images/icons/ups.ico';
 import DeviceInfoService from '../../../store/services/common/deviceInfo/DeviceInfoService';
+
+/**
+ * Categorizes device machine status according to rules:
+ * - is online : true, status : online -> active devices
+ * - is online : false, status : " " -> down devices
+ * - is online : false, status : ResumeAutomatic -> Other devices (ResumeAutomatic)
+ * - is online : false, status : Suspend -> other devices (suspend)
+ * - is online : false, status : ConsoleConnect -> other devices (Console connect)
+ * - is online : false, status : Shutdown -> Other devices (shutdown)
+ * - is online : false, status : ResumeSuspend -> Other devices (ResumeSuspend)
+ * - is online : false, status : SessionLogon -> Other devices (SessionLogOn)
+ * - is online : false, status : SessionLogoff -> Other devices (SessionLogoff)
+ *
+ * All other devices show as one category ("other").
+ */
+export const getDeviceStatusCategory = (entry) => {
+  if (!entry) {
+    return {
+      category: 'active',
+      statusText: 'Untracked',
+      displayLabel: 'Active Device (Untracked)',
+    };
+  }
+
+  const isOnline = entry.IsOnline === true || String(entry.IsOnline).toLowerCase() === 'true';
+  const rawStatus = (entry.Status || '').trim();
+  const statusLower = rawStatus.toLowerCase().replace(/[\s_]/g, '');
+
+  if (isOnline) {
+    return {
+      category: 'active',
+      statusText: rawStatus || 'online',
+      displayLabel: 'Active Device',
+    };
+  }
+
+  // If IsOnline is false / not online:
+  if (!rawStatus || statusLower === '') {
+    return {
+      category: 'down',
+      statusText: 'inactive',
+      displayLabel: 'Inactive Device',
+    };
+  }
+
+  // Check sub-statuses for 'other' devices category
+  if (statusLower === 'resumeautomatic') {
+    return {
+      category: 'other',
+      statusText: 'ResumeAutomatic',
+      displayLabel: 'Other devices (ResumeAutomatic)',
+    };
+  }
+  if (statusLower === 'suspend') {
+    return {
+      category: 'other',
+      statusText: 'suspend',
+      displayLabel: 'other devices (suspend)',
+    };
+  }
+  if (statusLower === 'consoleconnect' || statusLower === 'consoledisconnect') {
+    return {
+      category: 'other',
+      statusText: 'Console connect',
+      displayLabel: 'other devices (Console connect)',
+    };
+  }
+  if (statusLower === 'shutdown') {
+    return {
+      category: 'other',
+      statusText: 'shutdown',
+      displayLabel: 'Other devices (shutdown)',
+    };
+  }
+  if (statusLower === 'resumesuspend') {
+    return {
+      category: 'other',
+      statusText: 'ResumeSuspend',
+      displayLabel: 'Other devices (ResumeSuspend)',
+    };
+  }
+  if (statusLower === 'sessionlogon') {
+    return {
+      category: 'other',
+      statusText: 'SessionLogOn',
+      displayLabel: 'Other devices (SessionLogOn)',
+    };
+  }
+  if (statusLower === 'sessionlogoff') {
+    return {
+      category: 'other',
+      statusText: 'SessionLogoff',
+      displayLabel: 'Other devices (SessionLogoff)',
+    };
+  }
+  if (statusLower === 'sessionunlock') {
+    return {
+      category: 'other',
+      statusText: 'SessionUnlock',
+      displayLabel: 'Other devices (session unlock)',
+    };
+  }
+
+  return {
+    category: 'other',
+    statusText: rawStatus,
+    displayLabel: `Other devices (${rawStatus})`,
+  };
+};
+
+export const renderOtherBreakdownTooltip = (breakdown = {}) => {
+  const categories = [
+    { label: 'ResumeAutomatic', key: 'ResumeAutomatic' },
+    { label: 'Suspend', key: 'suspend' },
+    { label: 'Console Connect', key: 'Console connect' },
+    { label: 'Shutdown', key: 'shutdown' },
+    { label: 'ResumeSuspend', key: 'ResumeSuspend' },
+    { label: 'SessionLogOn', key: 'SessionLogOn' },
+    { label: 'SessionLogoff', key: 'SessionLogoff' },
+    { label: 'SessionUnlock', key: 'SessionUnlock' },
+  ];
+
+  return (
+    <Box sx={{ p: 1, minWidth: 190 }}>
+      <Typography
+        variant="subtitle2"
+        fontWeight="bold"
+        sx={{ color: '#fff', borderBottom: '1px solid rgba(255,255,255,0.2)', pb: 0.5, mb: 1 }}
+      >
+        Other Devices Breakdown
+      </Typography>
+      {categories.map((cat) => {
+        const count = breakdown[cat.key] || 0;
+        return (
+          <Box key={cat.key} sx={{ display: 'flex', justifyContent: 'space-between', gap: 2, mb: 0.5 }}>
+            <Typography variant="caption" sx={{ color: '#d1d5db' }}>
+              {cat.label}:
+            </Typography>
+            <Typography variant="caption" fontWeight="bold" sx={{ color: count > 0 ? '#fbbf24' : '#9ca3af' }}>
+              {count}
+            </Typography>
+          </Box>
+        );
+      })}
+    </Box>
+  );
+};
+
 const ZoomableImage = ({ src, alt }) => {
   const [transformOrigin, setTransformOrigin] = useState('center center');
   const handleMouseMove = (e) => {
@@ -1437,38 +1585,13 @@ const PortNavigationApp = () => {
   }, []);
 
   /**
-  
-   *  - IsOnline: true                      → active (not down)
-   *  - IsOnline: false, Status: "ResumeAutomatic", "Resume Automatic", "Suspend", "Console Disconnect", "Shutdown"
-   *                                        → active (not counted as down)
-   *  - IsOnline: false, Status: ""         → down (red on the map)
-   *  - not found in status map             → untracked, NOT counted as down
+   * Evaluates machine status category ('active', 'down', 'other') from status map.
    */
-  const isMachineDown = (deviceName, statusMap) => {
-    if (!deviceName || !statusMap) return false;
+  const getDeviceCategory = (deviceName, statusMap) => {
+    if (!deviceName || !statusMap) return 'active';
     const entry = statusMap[deviceName.trim().toLowerCase()];
-    if (!entry) return false; // not tracked by GetMachineStatus → do not count as down
-    if (entry.IsOnline === true) return false; // online → active
-    const status = (entry.Status || '').trim().toLowerCase();
-    
-    // Explicitly treated as active even if IsOnline is false:
-    if (
-      status === 'resume automatic' ||
-      status === 'resumeautomatic' ||
-      status === 'suspend' ||
-      status === 'console disconnect' ||
-      status === 'consoledisconnect' ||
-      status === 'shutdown'
-    ) {
-      return false;
-    }
-    
-    // Explicitly offline with no active status -> down
-    if (status === '') {
-      return true;
-    }
-    
-    return true; // Fallback for other offline statuses
+    if (!entry) return 'active'; // untracked devices default to active
+    return getDeviceStatusCategory(entry).category;
   };
 
   /**
@@ -1559,12 +1682,35 @@ const PortNavigationApp = () => {
 
                 // Cross-reference each device against the bulk status map
                 const sectorTotal = devices.length;
-                const sectorDown = devices.filter((device) => {
+                let sectorActive = 0;
+                let sectorDown = 0;
+                let sectorOther = 0;
+                const otherBreakdown = {
+                  ResumeAutomatic: 0,
+                  suspend: 0,
+                  'Console connect': 0,
+                  shutdown: 0,
+                  ResumeSuspend: 0,
+                  SessionLogOn: 0,
+                  SessionLogoff: 0,
+                  SessionUnlock: 0,
+                };
+
+                devices.forEach((device) => {
                   const deviceName = device.ComputerName || device.ComputerCode;
-                  return isMachineDown(deviceName, statusMap);
-                }).length;
-                // Active count includes all devices except the genuinely down ones
-                const sectorActive = sectorTotal - sectorDown;
+                  const entry = statusMap[deviceName?.trim().toLowerCase()];
+                  const statusInfo = getDeviceStatusCategory(entry);
+
+                  if (statusInfo.category === 'down') {
+                    sectorDown++;
+                  } else if (statusInfo.category === 'other') {
+                    sectorOther++;
+                    const sub = statusInfo.statusText || 'Other';
+                    otherBreakdown[sub] = (otherBreakdown[sub] || 0) + 1;
+                  } else {
+                    sectorActive++;
+                  }
+                });
 
                 // Update this sector's counts in allSectorsData
                 setAllSectorsData((prevSectors) =>
@@ -1574,7 +1720,9 @@ const PortNavigationApp = () => {
                         ...s,
                         ComputerCount: sectorTotal,
                         ActiveCount: sectorActive,
-                        DownCount: sectorDown, // genuinely offline (not shutdown, not untracked)
+                        DownCount: sectorDown,
+                        OtherCount: sectorOther,
+                        OtherBreakdown: otherBreakdown,
                       };
                     }
                     return s;
@@ -1643,17 +1791,43 @@ const PortNavigationApp = () => {
 
         if (devices && devices.length > 0) {
           const sectorTotal = devices.length;
-          const sectorDown = devices.filter((device) => {
+          let sectorActive = 0;
+          let sectorDown = 0;
+          let sectorOther = 0;
+          const otherBreakdown = {
+            ResumeAutomatic: 0,
+            suspend: 0,
+            'Console connect': 0,
+            shutdown: 0,
+            ResumeSuspend: 0,
+            SessionLogOn: 0,
+            SessionLogoff: 0,
+            SessionUnlock: 0,
+          };
+
+          devices.forEach((device) => {
             const deviceName = device.ComputerName || device.ComputerCode;
-            return isMachineDown(deviceName, statusMap);
-          }).length;
-          const sectorActive = sectorTotal - sectorDown;
+            const entry = statusMap[deviceName?.trim().toLowerCase()];
+            const statusInfo = getDeviceStatusCategory(entry);
+
+            if (statusInfo.category === 'down') {
+              sectorDown++;
+            } else if (statusInfo.category === 'other') {
+              sectorOther++;
+              const sub = statusInfo.statusText || 'Other';
+              otherBreakdown[sub] = (otherBreakdown[sub] || 0) + 1;
+            } else {
+              sectorActive++;
+            }
+          });
 
           return {
             ...sector,
             ComputerCount: sectorTotal,
             ActiveCount: sectorActive,
             DownCount: sectorDown,
+            OtherCount: sectorOther,
+            OtherBreakdown: otherBreakdown,
           };
         }
         return sector;
@@ -1692,14 +1866,31 @@ const PortNavigationApp = () => {
     let totalCount = 0;
     let activeCount = 0;
     let downCount = 0;
+    let otherCount = 0;
+    const otherBreakdown = {
+      ResumeAutomatic: 0,
+      suspend: 0,
+      'Console connect': 0,
+      shutdown: 0,
+      ResumeSuspend: 0,
+      SessionLogOn: 0,
+      SessionLogoff: 0,
+      SessionUnlock: 0,
+    };
 
     dockSectors.forEach((sector) => {
       totalCount += Number(sector.ComputerCount || 0);
       activeCount += Number(sector.ActiveCount !== undefined ? sector.ActiveCount : (sector.ComputerCount || 0));
-      downCount += Number(sector.DownCount || 0); // only genuinely offline (not shutdown/untracked)
+      downCount += Number(sector.DownCount || 0);
+      otherCount += Number(sector.OtherCount || 0);
+      if (sector.OtherBreakdown) {
+        Object.keys(sector.OtherBreakdown).forEach((k) => {
+          otherBreakdown[k] = (otherBreakdown[k] || 0) + Number(sector.OtherBreakdown[k] || 0);
+        });
+      }
     });
 
-    return { totalCount, activeCount, downCount };
+    return { totalCount, activeCount, downCount, otherCount, otherBreakdown };
   };
 
   /**
@@ -2852,6 +3043,11 @@ const PortNavigationApp = () => {
                           <Typography variant="body2" sx={{ color: '#ef4444', mb: 0.5 }}>
                             Inactive: {inactiveCount}
                           </Typography>
+                          <Tooltip title={renderOtherBreakdownTooltip(stats.otherBreakdown)} arrow placement="right">
+                            <Typography variant="body2" sx={{ color: '#9ca3af', mb: 0.5, cursor: 'pointer', '&:hover': { textDecoration: 'underline' } }}>
+                              Other: {stats.otherCount}
+                            </Typography>
+                          </Tooltip>
                           {/* <Typography
                             variant="body2"
                             sx={{
@@ -3290,13 +3486,32 @@ const PortNavigationApp = () => {
           ComputerCount: 0,
           ActiveCount: 0,
           DownCount: 0,
+          OtherCount: 0,
           sectors: [],
         };
       }
 
       acc[key].ComputerCount += Number(sector.ComputerCount || 0);
       acc[key].ActiveCount += Number(sector.ActiveCount !== undefined ? sector.ActiveCount : (sector.ComputerCount || 0));
-      acc[key].DownCount += Number(sector.DownCount || 0); // genuinely offline only
+      acc[key].DownCount += Number(sector.DownCount || 0);
+      acc[key].OtherCount += Number(sector.OtherCount || 0);
+      if (!acc[key].OtherBreakdown) {
+        acc[key].OtherBreakdown = {
+          ResumeAutomatic: 0,
+          suspend: 0,
+          'Console connect': 0,
+          shutdown: 0,
+          ResumeSuspend: 0,
+          SessionLogOn: 0,
+          SessionLogoff: 0,
+          SessionUnlock: 0,
+        };
+      }
+      if (sector.OtherBreakdown) {
+        Object.keys(sector.OtherBreakdown).forEach((bKey) => {
+          acc[key].OtherBreakdown[bKey] = (acc[key].OtherBreakdown[bKey] || 0) + Number(sector.OtherBreakdown[bKey] || 0);
+        });
+      }
       acc[key].sectors.push(sector);
 
       return acc;
@@ -3366,7 +3581,8 @@ const PortNavigationApp = () => {
             {formattedFloors.map((floor) => {
               const activeCount = floor.ActiveCount;
               const totalCount = floor.ComputerCount;
-              const inactiveCount = Number(floor.DownCount || 0); // genuinely offline only (excludes shutdown & untracked)
+              const inactiveCount = Number(floor.DownCount || 0);
+              const otherCount = Number(floor.OtherCount || 0);
 
               return (
                 <Grid item xs={12} sm={6} md={3} key={floor.Flo_No}>
@@ -3470,6 +3686,29 @@ const PortNavigationApp = () => {
                         </Typography>
                       </Box>
 
+                      <Tooltip title={renderOtherBreakdownTooltip(floor.OtherBreakdown)} arrow placement="top">
+                        <Box
+                          sx={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            mb: 1,
+                            borderRadius: 1,
+                            cursor: 'pointer',
+                            '&:hover': { opacity: 0.8 },
+                          }}
+                        >
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <HelpCircle size={16} color="#9ca3af" />
+                            <Typography variant="body2" color="#9ca3af">
+                              Other
+                            </Typography>
+                          </Box>
+                          <Typography variant="body2" color="#9ca3af">
+                            {otherCount}
+                          </Typography>
+                        </Box>
+                      </Tooltip>
+
                       {/* Progress Bar */}
                       <Box
                         sx={{
@@ -3564,7 +3803,8 @@ const PortNavigationApp = () => {
             {filteredSectors.map((sector) => {
               const totalCount = Number(sector.ComputerCount || 0);
               const activeCount = Number(sector.ActiveCount !== undefined ? sector.ActiveCount : (sector.ComputerCount || 0));
-              const inactiveCount = Number(sector.DownCount || 0); // genuinely offline only (excludes shutdown & untracked)
+              const inactiveCount = Number(sector.DownCount || 0);
+              const otherCount = Number(sector.OtherCount || 0);
 
               return (
                 <Grid item xs={12} sm={6} md={4} lg={3} key={`${sector.Flo_No}-${sector.Cat_CodeB}`}>
@@ -3651,6 +3891,29 @@ const PortNavigationApp = () => {
                           {inactiveCount}
                         </Typography>
                       </Box>
+
+                      <Tooltip title={renderOtherBreakdownTooltip(sector.OtherBreakdown)} arrow placement="top">
+                        <Box
+                          sx={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            mb: 0.75,
+                            borderRadius: 1,
+                            cursor: 'pointer',
+                            '&:hover': { opacity: 0.8 },
+                          }}
+                        >
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <HelpCircle size={14} color="#9ca3af" />
+                            <Typography variant="body2" color="#9ca3af" sx={{ fontSize: '0.8rem' }}>
+                              Other
+                            </Typography>
+                          </Box>
+                          <Typography variant="body2" color="#9ca3af" sx={{ fontSize: '0.8rem' }}>
+                            {otherCount}
+                          </Typography>
+                        </Box>
+                      </Tooltip>
 
                       {/* Progress Bar */}
                       <Box

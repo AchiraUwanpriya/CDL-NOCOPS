@@ -530,6 +530,7 @@ import {
 } from '@mui/material';
 import { ArrowBack, Computer, Print, Storage } from '@mui/icons-material';
 import DeviceInfoService from '../../../store/services/common/deviceInfo/DeviceInfoService';
+import { getDeviceStatusCategory, renderOtherBreakdownTooltip } from '../../../views/common/locationInfo/LocationInfo';
 
 // Zoomable Image Component
 const ZoomableImage = ({ src, alt }) => {
@@ -581,7 +582,7 @@ const NetworkView = ({
   const [layoutImage, setLayoutImage] = useState(null);
   const [loadingImage, setLoadingImage] = useState(false);
   const [imageError, setImageError] = useState(false);
-  // devicePingStatus: { [ipAddress]: 'up' | 'down' | 'loading' }
+  // devicePingStatus: { [deviceName]: { category: 'active' | 'down' | 'other' | 'loading', statusText: string, displayLabel: string } }
   const [devicePingStatus, setDevicePingStatus] = useState({});
 
   const serverPos = { left: '10%', top: '50%' };
@@ -589,41 +590,6 @@ const NetworkView = ({
   // 🔹 Fetch devices then check status via GetMachineStatus
   useEffect(() => {
     if (!selectedSector?.Flo_No || !selectedSector?.Cat_CodeB) return;
-
-    /**
-     
-     *  - IsOnline: true                         → active (not down)
-     *  - IsOnline: false, Status: "ResumeAutomatic", "Resume Automatic", "Suspend", "Console Disconnect", "Shutdown"
-     *                                           → active (not counted as down)
-     *  - IsOnline: false, Status: ""            → down (red on the map)
-     *  - not found in status map                → untracked, NOT counted as down
-     */
-    const isMachineDown = (deviceName, statusMap) => {
-      if (!deviceName || !statusMap) return false;
-      const entry = statusMap[deviceName.trim().toLowerCase()];
-      if (!entry) return false; // not tracked by GetMachineStatus → do not count as down
-      if (entry.IsOnline === true) return false; // online → active
-      const status = (entry.Status || '').trim().toLowerCase();
-      
-      // Explicitly treated as active even if IsOnline is false:
-      if (
-        status === 'resume automatic' ||
-        status === 'resumeautomatic' ||
-        status === 'suspend' ||
-        status === 'console disconnect' ||
-        status === 'consoledisconnect' ||
-        status === 'shutdown'
-      ) {
-        return false;
-      }
-      
-      // Explicitly offline with no active status -> down
-      if (status === '') {
-        return true;
-      }
-      
-      return true; // Fallback for other offline statuses
-    };
 
     const fetchAndCheckDevices = async () => {
       try {
@@ -639,7 +605,13 @@ const NetworkView = ({
         const initStatus = {};
         devices.forEach((d) => {
           const deviceName = d.ComputerName || d.ComputerCode;
-          if (deviceName) initStatus[deviceName] = 'loading';
+          if (deviceName) {
+            initStatus[deviceName] = {
+              category: 'loading',
+              statusText: 'Checking...',
+              displayLabel: 'Checking...',
+            };
+          }
         });
         setDevicePingStatus(initStatus);
 
@@ -662,7 +634,8 @@ const NetworkView = ({
         devices.forEach((device) => {
           const deviceName = device.ComputerName || device.ComputerCode;
           if (!deviceName) return;
-          updatedStatus[deviceName] = isMachineDown(deviceName, statusMap) ? 'down' : 'up';
+          const entry = statusMap[deviceName.trim().toLowerCase()];
+          updatedStatus[deviceName] = getDeviceStatusCategory(entry);
         });
         setDevicePingStatus(updatedStatus);
       } catch (err) {
@@ -763,16 +736,38 @@ const NetworkView = ({
     }
   };
 
-  // Determine live ping status for a device (keyed by device name)
-  const getDevicePingStatus = (device) => {
+  // Determine live status details for a device (keyed by device name)
+  const getDevicePingDetails = (device) => {
     const deviceName = device.ComputerName || device.ComputerCode;
-    if (!deviceName) return 'unknown';
-    return devicePingStatus[deviceName] || 'unknown';
+    if (!deviceName || !devicePingStatus[deviceName]) {
+      return { category: 'loading', statusText: 'Checking...', displayLabel: 'Checking...' };
+    }
+    return devicePingStatus[deviceName];
   };
 
-  const activeDevices = networkDevices.filter((d) => getDevicePingStatus(d) === 'up').length;
-  const downDevices = networkDevices.filter((d) => getDevicePingStatus(d) === 'down').length;
-  const loadingDevices = networkDevices.filter((d) => getDevicePingStatus(d) === 'loading').length;
+  const activeDevices = networkDevices.filter((d) => getDevicePingDetails(d).category === 'active').length;
+  const downDevices = networkDevices.filter((d) => getDevicePingDetails(d).category === 'down').length;
+  const otherDevices = networkDevices.filter((d) => getDevicePingDetails(d).category === 'other').length;
+  const loadingDevices = networkDevices.filter((d) => getDevicePingDetails(d).category === 'loading').length;
+
+  const otherBreakdown = {
+    ResumeAutomatic: 0,
+    suspend: 0,
+    'Console connect': 0,
+    shutdown: 0,
+    ResumeSuspend: 0,
+    SessionLogOn: 0,
+    SessionLogoff: 0,
+    SessionUnlock: 0,
+  };
+
+  networkDevices.forEach((d) => {
+    const details = getDevicePingDetails(d);
+    if (details.category === 'other') {
+      const sub = details.statusText || 'Other';
+      otherBreakdown[sub] = (otherBreakdown[sub] || 0) + 1;
+    }
+  });
 
   const handleDeviceClick = (device) => {
     setSelectedDevice(device);
@@ -788,19 +783,39 @@ const NetworkView = ({
 
   const DeviceNode = ({ device }) => {
     const isPrinter = (device.Com_Type || '').toLowerCase().includes('printer');
-    const pingStatus = getDevicePingStatus(device);
-    const isDown = pingStatus === 'down';
-    const isLoading = pingStatus === 'loading';
-    const isHighlighted = highlightedDeviceName &&
-      (device.ComputerName || device.ComputerCode || '').trim().toLowerCase() ===
-      highlightedDeviceName.trim().toLowerCase();
+    const details = getDevicePingDetails(device);
+    const isDown = details.category === 'down';
+    const isOther = details.category === 'other';
+    const isLoading = details.category === 'loading';
 
-    // Indicator dot color: red if down, blinking grey if loading, green if up
-    const indicatorColor = isDown ? '#ef4444' : isLoading ? '#9ca3af' : '#10b981';
-    // Icon background: dim red tint if down
+    // Indicator dot color: red if down, gray if other, blinking grey if loading, green if active
+    const indicatorColor = isDown ? '#ef4444' : isOther ? '#9ca3af' : isLoading ? '#9ca3af' : '#10b981';
+
+    // Icon background: gradient red for down, gradient gray for other, gradient blue for active
     const iconBg = isDown
       ? 'linear-gradient(135deg, #7f1d1d, #ef444488)'
+      : isOther
+      ? 'linear-gradient(135deg, #4b5563, #6b728088)'
       : 'linear-gradient(135deg, #3b82f6, #3b82f688)';
+
+    let tooltipPingLabel = '🟢 Active Device';
+    if (isDown) {
+      tooltipPingLabel = '🔴 Inactive Device';
+    } else if (isOther) {
+      tooltipPingLabel = `⚪ ${details.displayLabel}`;
+    } else if (isLoading) {
+      tooltipPingLabel = '⏳ Checking...';
+    }
+
+    let chipLabel = null;
+    let chipBg = 'rgba(239,68,68,0.8)';
+    if (isDown) {
+      chipLabel = 'Inactive';
+      chipBg = 'rgba(239,68,68,0.8)';
+    } else if (isOther) {
+      chipLabel = `Other (${details.statusText})`;
+      chipBg = 'rgba(107,114,128,0.9)';
+    }
 
     return (
       <Tooltip
@@ -816,11 +831,11 @@ const NetworkView = ({
               variant="caption"
               display="block"
               sx={{
-                color: isDown ? '#ff6b6b' : isLoading ? '#d1d5db' : '#4ade80',
+                color: isDown ? '#ff6b6b' : isOther ? '#9ca3af' : isLoading ? '#d1d5db' : '#4ade80',
                 fontWeight: 'bold',
               }}
             >
-              Ping: {isDown ? '🔴 Inactive (Device Down)' : isLoading ? '⏳ Checking...' : '🟢 Active'}
+              Ping: {tooltipPingLabel}
             </Typography>
           </Box>
         }
@@ -836,7 +851,7 @@ const NetworkView = ({
             transform: `translate(-50%, -50%) scale(${device.scale})`,
             transformOrigin: 'center',
             cursor: 'pointer',
-            opacity: isDown && !isHighlighted ? 0.75 : 1,
+            opacity: isDown || isOther ? 0.85 : 1,
             '&:hover': {
               transform: `translate(-50%, -50%) scale(${device.scale * 1.1})`,
               zIndex: 1000,
@@ -868,6 +883,16 @@ const NetworkView = ({
                 '0%, 100%': { boxShadow: '0 0 12px 2px rgba(255,152,0,0.5)' },
                 '50%': { boxShadow: '0 0 20px 8px rgba(255,152,0,0.8)' },
               },
+              border: isDown
+                ? '1px solid rgba(239,68,68,0.5)'
+                : isOther
+                ? '1px solid rgba(156,163,175,0.5)'
+                : '1px solid transparent',
+              background: isDown
+                ? 'rgba(127,29,29,0.2)'
+                : isOther
+                ? 'rgba(75,85,99,0.2)'
+                : 'transparent',
             }}
           >
             <Box sx={{ display: 'inline-block', mb: 1, position: 'relative' }}>
@@ -884,9 +909,9 @@ const NetworkView = ({
                 }}
               >
                 {isPrinter ? (
-                  <Print sx={{ color: isDown ? '#fca5a5' : 'white', fontSize: 24 }} />
+                  <Print sx={{ color: isDown ? '#fca5a5' : isOther ? '#e5e7eb' : 'white', fontSize: 24 }} />
                 ) : (
-                  <Computer sx={{ color: isDown ? '#fca5a5' : 'white', fontSize: 24 }} />
+                  <Computer sx={{ color: isDown ? '#fca5a5' : isOther ? '#e5e7eb' : 'white', fontSize: 24 }} />
                 )}
               </Box>
               {/* Live ping status indicator dot */}
@@ -912,23 +937,23 @@ const NetworkView = ({
               variant="caption"
               fontWeight="bold"
               display="block"
-              sx={{ color: isDown ? '#fca5a5' : 'white' }}
+              sx={{ color: isDown ? '#fca5a5' : isOther ? '#e5e7eb' : 'white' }}
             >
               {device.ComputerName || device.ComputerCode}
             </Typography>
             <Typography variant="caption" color="primary.light" display="block">
               {device.Com_Type || (isPrinter ? 'Printer' : 'PC')}
             </Typography>
-            {/* Inactive badge */}
-            {isDown && (
+            {/* Status badge */}
+            {chipLabel && (
               <Chip
-                label="Inactive"
+                label={chipLabel}
                 size="small"
                 sx={{
                   mt: 0.5,
                   height: 16,
                   fontSize: '9px',
-                  backgroundColor: 'rgba(239,68,68,0.8)',
+                  backgroundColor: chipBg,
                   color: 'white',
                   fontWeight: 'bold',
                 }}
@@ -1055,22 +1080,32 @@ const NetworkView = ({
               Total: {networkDevices.length}
             </Button>
           </Grid>
-          {/* <Grid item>
+          <Grid item>
             <Button
               variant="contained"
-              sx={{ bgcolor: '#4caf50', '&:hover': { bgcolor: '#388e3c' } }}
+              sx={{ bgcolor: '#10b981', '&:hover': { bgcolor: '#059669' } }}
             >
               🟢 Active: {activeDevices}
             </Button>
-          </Grid> */}
-          {/* <Grid item>
+          </Grid>
+          <Grid item>
             <Button
               variant="contained"
-              sx={{ bgcolor: '#f44336', '&:hover': { bgcolor: '#c62828' } }}
+              sx={{ bgcolor: '#ef4444', '&:hover': { bgcolor: '#dc2626' } }}
             >
               🔴 Inactive: {downDevices}
             </Button>
-          </Grid> */}
+          </Grid>
+          <Grid item>
+            <Tooltip title={renderOtherBreakdownTooltip(otherBreakdown)} arrow placement="top">
+              <Button
+                variant="contained"
+                sx={{ bgcolor: '#6b7280', '&:hover': { bgcolor: '#4b5563' } }}
+              >
+                ⚪ Other: {otherDevices}
+              </Button>
+            </Tooltip>
+          </Grid>
           {loadingDevices > 0 && (
             <Grid item>
               <Button variant="outlined" disabled>
