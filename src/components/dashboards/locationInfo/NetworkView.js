@@ -787,6 +787,13 @@ const NetworkView = ({
     const isDown = details.category === 'down';
     const isOther = details.category === 'other';
     const isLoading = details.category === 'loading';
+    const deviceName = (device.ComputerName || device.ComputerCode || '').trim().toLowerCase();
+    const highlightedName = (highlightedDeviceName || '').trim().toLowerCase();
+    const isHighlighted =
+      (selectedDevice &&
+        deviceName ===
+          (selectedDevice.ComputerName || selectedDevice.ComputerCode || '').trim().toLowerCase()) ||
+      (highlightedName && deviceName === highlightedName);
 
     // Indicator dot color: red if down, gray if other, blinking grey if loading, green if active
     const indicatorColor = isDown ? '#ef4444' : isOther ? '#9ca3af' : isLoading ? '#9ca3af' : '#10b981';
