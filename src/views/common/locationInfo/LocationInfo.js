@@ -1359,9 +1359,9 @@ import DeviceInfoService from '../../../store/services/common/deviceInfo/DeviceI
 export const getDeviceStatusCategory = (entry) => {
   if (!entry) {
     return {
-      category: 'active',
-      statusText: 'Untracked',
-      displayLabel: 'Active Device (Untracked)',
+      category: 'down',
+      statusText: 'inactive',
+      displayLabel: 'Inactive Device',
     };
   }
 
@@ -1585,9 +1585,9 @@ const PortNavigationApp = () => {
    * Evaluates machine status category ('active', 'down', 'other') from status map.
    */
   const getDeviceCategory = (deviceName, statusMap) => {
-    if (!deviceName || !statusMap) return 'active';
+    if (!deviceName || !statusMap) return 'down';
     const entry = statusMap[deviceName.trim().toLowerCase()];
-    if (!entry) return 'active'; // untracked devices default to active
+    if (!entry) return 'down'; // devices not found in GetMachineStatus default to inactive (down)
     return getDeviceStatusCategory(entry).category;
   };
 
