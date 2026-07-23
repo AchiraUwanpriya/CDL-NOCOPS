@@ -1707,23 +1707,42 @@ const PortNavigationApp = () => {
 
                 return {
                   hasDevice: true,
-                  hasDown: sectorDown > 0,
+                  sectorTotal,
+                  sectorActive,
+                  sectorDown,
                 };
               }
             } catch (sectorErr) {
               console.warn(`Error fetching devices for sector ${sector.Flo_No}:`, sectorErr);
             }
-            return { hasDevice: false, hasDown: false };
+            return { hasDevice: false, sectorTotal: 0, sectorActive: 0, sectorDown: 0 };
           })
         );
 
         // Determine building status from sector results
-        const hasAnyDevice = sectorResults.some((r) => r.hasDevice);
-        const hasAnyDown = sectorResults.some((r) => r.hasDown);
+        let bTotal = 0;
+        let bActive = 0;
+        sectorResults.forEach((r) => {
+          if (r.hasDevice) {
+            bTotal += r.sectorTotal || 0;
+            bActive += r.sectorActive || 0;
+          }
+        });
+
+        let status = 'unknown';
+        if (bTotal > 0) {
+          if (bActive === 0) {
+            status = 'down'; // Red: all devices inactive
+          } else if (bActive < bTotal) {
+            status = 'partial'; // Yellow: active & inactive both devices
+          } else {
+            status = 'up'; // Green: all devices active
+          }
+        }
 
         setLocationPingStatus((prev) => ({
           ...prev,
-          [buildCode]: hasAnyDevice ? (hasAnyDown ? 'down' : 'up') : 'unknown',
+          [buildCode]: status,
         }));
       } catch (err) {
         console.warn(`Error processing location ${buildCode}:`, err);
@@ -1812,10 +1831,27 @@ const PortNavigationApp = () => {
       // Recalculate building status based on the updated sectors counts
       buildingIds.forEach((buildCode) => {
         const sectors = updatedSectors.filter((s) => s.Build_Code === buildCode);
-        const hasAnyDevice = sectors.some((s) => s.ComputerCount > 0);
-        const hasAnyDown = sectors.some((s) => (s.DownCount || 0) > 0);
+        let bTotal = 0;
+        let bActive = 0;
+        sectors.forEach((s) => {
+          const total = Number(s.ComputerCount || 0);
+          const active = Number(s.ActiveCount !== undefined ? s.ActiveCount : total);
+          bTotal += total;
+          bActive += active;
+        });
 
-        nextLocationPingStatus[buildCode] = hasAnyDevice ? (hasAnyDown ? 'down' : 'up') : 'unknown';
+        let status = 'unknown';
+        if (bTotal > 0) {
+          if (bActive === 0) {
+            status = 'down'; // Red: all devices inactive
+          } else if (bActive < bTotal) {
+            status = 'partial'; // Yellow: active & inactive both devices
+          } else {
+            status = 'up'; // Green: all devices active
+          }
+        }
+
+        nextLocationPingStatus[buildCode] = status;
       });
 
       return updatedSectors;
@@ -1871,18 +1907,19 @@ const PortNavigationApp = () => {
 
   /**
    * Returns the marker color for a dock based on GetMachineStatus results.
-   * - 'down'    → red  (#f44336)
-   * - 'up'      → green (#4caf50)
+   * - 'down'    → red    (#f44336) - all devices inactive
+   * - 'partial' → yellow (#f59e0b) - active & inactive both devices
+   * - 'up'      → green  (#4caf50) - all devices active
    * - 'loading' → blue (default)
-   * - 'unknown' → blue (default)
    */
   const getDockPingColor = (dockId, isSelected, isHovered) => {
     if (isHovered) return '#1565c0';
     if (isSelected) return '#ff9800';
     const status = locationPingStatus[dockId];
     if (status === 'down') return '#f44336';
+    if (status === 'partial') return '#f59e0b';
     if (status === 'up') return '#4caf50';
-    return '#1976d2'; // default blue (loading or unknown)
+    return '#1976d2'; // default blue (loading)
   };
 
   /**
@@ -1892,8 +1929,58 @@ const PortNavigationApp = () => {
     if (isSelected || isHovered) return 'none';
     const status = locationPingStatus[dockId];
     if (status === 'down') return 'pulseRed 2s infinite';
+    if (status === 'partial') return 'pulseYellow 2s infinite';
     if (status === 'up') return 'pulseGreen 2s infinite';
     return 'none';
+  };
+
+  /**
+   * Returns background, border, hover shadow, and icon gradient for floor/sector cards:
+   * - all devices inactive -> Red
+   * - active & inactive both -> Yellow
+   * - all devices active -> Green
+   */
+  const getCardStatusStyles = (totalCount, activeCount) => {
+    if (!totalCount || totalCount === 0) {
+      return {
+        bg: 'rgba(255,255,255,0.05)',
+        hoverBg: 'rgba(255,255,255,0.1)',
+        border: '1px solid rgba(255,255,255,0.1)',
+        hoverShadow: '0 4px 12px rgba(0,0,0,0.3)',
+        iconGradient: 'linear-gradient(to right, #3b82f6, #8b5cf6)',
+      };
+    }
+
+    if (activeCount === 0) {
+      // Red: All devices inactive
+      return {
+        bg: 'rgba(244, 67, 54, 0.08)',
+        hoverBg: 'rgba(244, 67, 54, 0.14)',
+        border: '1px solid rgba(244, 67, 54, 0.4)',
+        hoverShadow: '0 0 12px rgba(244, 67, 54, 0.4)',
+        iconGradient: 'linear-gradient(to right, #ef4444, #f44336)',
+      };
+    }
+
+    if (activeCount < totalCount) {
+      // Yellow: Both active and inactive devices present
+      return {
+        bg: 'rgba(245, 158, 11, 0.08)',
+        hoverBg: 'rgba(245, 158, 11, 0.14)',
+        border: '1px solid rgba(245, 158, 11, 0.4)',
+        hoverShadow: '0 0 12px rgba(245, 158, 11, 0.4)',
+        iconGradient: 'linear-gradient(to right, #f59e0b, #d97706)',
+      };
+    }
+
+    // Green: All devices active
+    return {
+      bg: 'rgba(76, 175, 80, 0.08)',
+      hoverBg: 'rgba(76, 175, 80, 0.14)',
+      border: '1px solid rgba(76, 175, 80, 0.4)',
+      hoverShadow: '0 0 12px rgba(76, 175, 80, 0.4)',
+      iconGradient: 'linear-gradient(to right, #10b981, #059669)',
+    };
   };
 
   const docks = [
@@ -2579,46 +2666,139 @@ const PortNavigationApp = () => {
               },
             }}
           >
-            {sidebarItems.map((item) => (
-              <Tooltip key={item.id} title={item.name} arrow placement="right">
-                <Box
-                  sx={{
-                    p: 1.5,
-                    pl: 2,
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    backgroundColor: hoveredState === item.id ? '#e3f2fd' : 'transparent',
-                    borderLeft: hoveredState === item.id ? '4px solid #1976d2' : '4px solid transparent',
-                    '&:hover': {
-                      backgroundColor: '#a19d9dff',
-                      transform: 'translateX(4px)',
-                    },
-                    transition: 'all 0.25s ease',
-                  }}
-                  onClick={() => {
-                    if (showSwitches) console.log('Switch clicked:', item.name);
-                    else if (showPrinters) console.log('Printer clicked:', item.name);
-                    else if (showUps) console.log('UPS clicked:', item.name);
-                    else handleDockClick(item);
-                  }}
-                  onMouseEnter={() => setHoveredState(item.id)}
-                  onMouseLeave={() => setHoveredState(null)}
-                >
-                  {sidebarIcon}
-                  <Typography
-                    variant="body2"
+            {sidebarItems.map((item) => {
+              const isSelected = selectedDock?.id === item.id && !showSwitches && !showPrinters && !showUps;
+              const isHovered = hoveredState === item.id;
+
+              let itemColors = {
+                main: '#1976d2',
+                text: '#1976d2',
+                bgColor: 'rgba(25, 118, 210, 0.08)',
+                hoverBg: 'rgba(25, 118, 210, 0.16)',
+              };
+
+              if (showSwitches) {
+                itemColors = {
+                  main: '#388e3c',
+                  text: '#2e7d32',
+                  bgColor: 'rgba(56, 142, 60, 0.08)',
+                  hoverBg: 'rgba(56, 142, 60, 0.16)',
+                };
+              } else if (showPrinters) {
+                itemColors = {
+                  main: '#1976d2',
+                  text: '#1565c0',
+                  bgColor: 'rgba(25, 118, 210, 0.08)',
+                  hoverBg: 'rgba(25, 118, 210, 0.16)',
+                };
+              } else if (showUps) {
+                itemColors = {
+                  main: '#ed6c02',
+                  text: '#d84315',
+                  bgColor: 'rgba(237, 108, 2, 0.08)',
+                  hoverBg: 'rgba(237, 108, 2, 0.16)',
+                };
+              } else {
+                const status = locationPingStatus[item.id];
+                if (status === 'down') {
+                  itemColors = {
+                    main: '#f44336',
+                    text: '#d32f2f',
+                    bgColor: 'rgba(244, 67, 54, 0.08)',
+                    hoverBg: 'rgba(244, 67, 54, 0.16)',
+                  };
+                } else if (status === 'partial') {
+                  itemColors = {
+                    main: '#f59e0b',
+                    text: '#b45309',
+                    bgColor: 'rgba(245, 158, 11, 0.08)',
+                    hoverBg: 'rgba(245, 158, 11, 0.16)',
+                  };
+                } else if (status === 'up') {
+                  itemColors = {
+                    main: '#4caf50',
+                    text: '#2e7d32',
+                    bgColor: 'rgba(76, 175, 80, 0.08)',
+                    hoverBg: 'rgba(76, 175, 80, 0.16)',
+                  };
+                }
+              }
+
+              const itemIcon = showSwitches ? (
+                <Storage sx={{ mr: 1, fontSize: 18, color: itemColors.main }} />
+              ) : showPrinters ? (
+                <Print sx={{ mr: 1, fontSize: 18, color: itemColors.main }} />
+              ) : showUps ? (
+                <img src={UpsIcon} alt="UPS" style={{ width: 18, height: 18, marginRight: 8 }} />
+              ) : (
+                <LocationOn sx={{ mr: 1, fontSize: 18, color: itemColors.main }} />
+              );
+
+              return (
+                <Tooltip key={item.id} title={item.name} arrow placement="right">
+                  <Box
                     sx={{
-                      fontSize: '14px',
-                      fontWeight: hoveredState === item.id ? 600 : 400,
-                      color: hoveredState === item.id ? '#1976d2' : '#424242',
+                      p: 1.5,
+                      pl: 2,
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      backgroundColor: isSelected
+                        ? itemColors.bgColor
+                        : isHovered
+                        ? itemColors.hoverBg
+                        : 'transparent',
+                      borderLeft: isSelected || isHovered
+                        ? `4px solid ${itemColors.main}`
+                        : `4px solid ${itemColors.main}60`,
+                      '&:hover': {
+                        backgroundColor: itemColors.hoverBg,
+                        transform: 'translateX(4px)',
+                      },
+                      transition: 'all 0.25s ease',
                     }}
+                    onClick={() => {
+                      if (showSwitches) console.log('Switch clicked:', item.name);
+                      else if (showPrinters) console.log('Printer clicked:', item.name);
+                      else if (showUps) console.log('UPS clicked:', item.name);
+                      else handleDockClick(item);
+                    }}
+                    onMouseEnter={() => setHoveredState(item.id)}
+                    onMouseLeave={() => setHoveredState(null)}
                   >
-                    {item.name}
-                  </Typography>
-                </Box>
-              </Tooltip>
-            ))}
+                    <Box sx={{ display: 'flex', alignItems: 'center', overflow: 'hidden' }}>
+                      {itemIcon}
+                      <Typography
+                        variant="body2"
+                        noWrap
+                        sx={{
+                          fontSize: '14px',
+                          fontWeight: isSelected || isHovered ? 700 : 600,
+                          color: itemColors.text,
+                        }}
+                      >
+                        {item.name}
+                      </Typography>
+                    </Box>
+
+                    {!showSwitches && !showPrinters && !showUps && (
+                      <Box
+                        sx={{
+                          width: 8,
+                          height: 8,
+                          borderRadius: '50%',
+                          backgroundColor: itemColors.main,
+                          boxShadow: `0 0 6px ${itemColors.main}`,
+                          flexShrink: 0,
+                          ml: 1,
+                        }}
+                      />
+                    )}
+                  </Box>
+                </Tooltip>
+              );
+            })}
 
             {sidebarItems.length === 0 && (
               <Typography variant="body2" sx={{ color: 'gray', p: 2, textAlign: 'center' }}>
@@ -2760,7 +2940,7 @@ const PortNavigationApp = () => {
                       transform: 'translate(-50%, -50%)',
                       zIndex: isSelected
                         ? 40
-                        : locationPingStatus[dock.id] === 'down'
+                        : locationPingStatus[dock.id] === 'down' || locationPingStatus[dock.id] === 'partial'
                         ? 30
                         : 10,
                       display: 'flex',
@@ -2789,7 +2969,7 @@ const PortNavigationApp = () => {
                           alignItems: 'center',
                           gap: '6px',
                           transition: 'all 0.3s ease',
-                          zIndex: locationPingStatus[dock.id] === 'down' ? 50 : 25,
+                          zIndex: locationPingStatus[dock.id] === 'down' || locationPingStatus[dock.id] === 'partial' ? 50 : 25,
                           '&::after': {
                             content: '""',
                             position: 'absolute',
@@ -2802,8 +2982,10 @@ const PortNavigationApp = () => {
                           }
                         }}
                       >
-                        {inactiveCount > 0 ? (
+                        {stats.activeCount === 0 ? (
                           <WifiOff size={13} color="#ef4444" />
+                        ) : stats.activeCount < stats.totalCount ? (
+                          <WifiOff size={13} color="#f59e0b" />
                         ) : (
                           <Wifi size={13} color="#4ade80" />
                         )}
@@ -2883,7 +3065,9 @@ const PortNavigationApp = () => {
                               ? '0 4px 16px rgba(0,0,0,0.4)'
                               : locationPingStatus[dock.id] === 'down'
                                 ? '0 0 8px 4px rgba(244, 67, 54, 0.5)'
-                                : '0 2px 8px rgba(0,0,0,0.3)',
+                                : locationPingStatus[dock.id] === 'partial'
+                                  ? '0 0 8px 4px rgba(245, 158, 11, 0.5)'
+                                  : '0 2px 8px rgba(0,0,0,0.3)',
                           transition: 'all 0.3s ease',
                           cursor: 'pointer',
                           '@keyframes pulseRed': {
@@ -2895,6 +3079,17 @@ const PortNavigationApp = () => {
                             },
                             '100%': {
                               boxShadow: '0 0 0 0 rgba(244, 67, 54, 0)',
+                            },
+                          },
+                          '@keyframes pulseYellow': {
+                            '0%': {
+                              boxShadow: '0 0 0 0 rgba(245, 158, 11, 0.7)',
+                            },
+                            '70%': {
+                              boxShadow: '0 0 0 10px rgba(245, 158, 11, 0)',
+                            },
+                            '100%': {
+                              boxShadow: '0 0 0 0 rgba(245, 158, 11, 0)',
                             },
                           },
                           '@keyframes pulseGreen': {
@@ -3146,7 +3341,20 @@ const PortNavigationApp = () => {
                 zIndex: 30,
               }}
             >
-              <Typography variant="subtitle1" fontWeight="bold" sx={{ color: '#1976d2' }}>
+              <Typography
+                variant="subtitle1"
+                fontWeight="bold"
+                sx={{
+                  color:
+                    locationPingStatus[selectedDock.id] === 'down'
+                      ? '#d32f2f'
+                      : locationPingStatus[selectedDock.id] === 'partial'
+                      ? '#b45309'
+                      : locationPingStatus[selectedDock.id] === 'up'
+                      ? '#2e7d32'
+                      : '#1976d2',
+                }}
+              >
                 {selectedDock.name}
               </Typography>
             </Box>
@@ -3372,6 +3580,7 @@ const PortNavigationApp = () => {
               const totalCount = floor.ComputerCount;
               const inactiveCount = Number(floor.DownCount || 0);
               const otherCount = Number(floor.OtherCount || 0);
+              const cardStyles = getCardStatusStyles(totalCount, activeCount);
 
               return (
                 <Grid item xs={12} sm={6} md={3} key={floor.Flo_No}>
@@ -3380,14 +3589,14 @@ const PortNavigationApp = () => {
                     sx={{
                       height: '100%',
                       borderRadius: 3,
-                      background: inactiveCount > 0 ? 'rgba(244, 67, 54, 0.08)' : 'rgba(255,255,255,0.05)',
-                      border: inactiveCount > 0 ? '1px solid rgba(244, 67, 54, 0.4)' : '1px solid rgba(255,255,255,0.1)',
+                      background: cardStyles.bg,
+                      border: cardStyles.border,
                       cursor: 'pointer',
                       transition: '0.3s',
                       '&:hover': {
                         transform: 'scale(1.03)',
-                        boxShadow: inactiveCount > 0 ? '0 0 12px rgba(244, 67, 54, 0.4)' : 6,
-                        background: inactiveCount > 0 ? 'rgba(244, 67, 54, 0.12)' : 'rgba(255,255,255,0.1)',
+                        boxShadow: cardStyles.hoverShadow,
+                        background: cardStyles.hoverBg,
                       },
                     }}
                   >
@@ -3405,7 +3614,7 @@ const PortNavigationApp = () => {
                           sx={{
                             width: 60,
                             height: 60,
-                            background: inactiveCount > 0 ? 'linear-gradient(to right, #ef4444, #f44336)' : 'linear-gradient(to right, #3b82f6, #8b5cf6)',
+                            background: cardStyles.iconGradient,
                             borderRadius: 2,
                             display: 'flex',
                             justifyContent: 'center',
@@ -3421,7 +3630,7 @@ const PortNavigationApp = () => {
                             right: -10,
                             width: 40,
                             height: 40,
-                            background: inactiveCount > 0 ? 'linear-gradient(to right, #ef4444, #f44336)' : 'linear-gradient(to right, #3b82f6, #8b5cf6)',
+                            background: cardStyles.iconGradient,
                             color: 'white',
                             borderRadius: '50%',
                             display: 'flex',
@@ -3512,7 +3721,7 @@ const PortNavigationApp = () => {
                           sx={{
                             width: totalCount > 0 ? `${(activeCount / totalCount) * 100}%` : '0%',
                             height: '100%',
-                            background: 'linear-gradient(to right, #4ade80, #3b82f6)',
+                            background: cardStyles.iconGradient,
                             borderRadius: 4,
                             transition: 'width 0.3s',
                           }}
@@ -3594,6 +3803,7 @@ const PortNavigationApp = () => {
               const activeCount = Number(sector.ActiveCount !== undefined ? sector.ActiveCount : (sector.ComputerCount || 0));
               const inactiveCount = Number(sector.DownCount || 0);
               const otherCount = Number(sector.OtherCount || 0);
+              const cardStyles = getCardStatusStyles(totalCount, activeCount);
 
               return (
                 <Grid item xs={12} sm={6} md={4} lg={3} key={`${sector.Flo_No}-${sector.Cat_CodeB}`}>
@@ -3604,15 +3814,15 @@ const PortNavigationApp = () => {
                       borderRadius: 2,
                       p: 1.5,
                       cursor: 'pointer',
-                      background: inactiveCount > 0 ? 'rgba(244, 67, 54, 0.08)' : 'rgba(255,255,255,0.05)',
-                      border: inactiveCount > 0 ? '1px solid rgba(244, 67, 54, 0.4)' : '1px solid rgba(255,255,255,0.1)',
+                      background: cardStyles.bg,
+                      border: cardStyles.border,
                       display: 'flex',
                       flexDirection: 'column',
                       transition: '0.3s',
                       '&:hover': {
                         transform: 'scale(1.03)',
-                        boxShadow: inactiveCount > 0 ? '0 0 12px rgba(244, 67, 54, 0.4)' : 6,
-                        background: inactiveCount > 0 ? 'rgba(244, 67, 54, 0.12)' : 'rgba(255,255,255,0.1)',
+                        boxShadow: cardStyles.hoverShadow,
+                        background: cardStyles.hoverBg,
                       },
                     }}
                   >
@@ -3629,7 +3839,7 @@ const PortNavigationApp = () => {
                           sx={{
                             width: 44,
                             height: 44,
-                            background: inactiveCount > 0 ? 'linear-gradient(to right, #ef4444, #f44336)' : 'linear-gradient(to right, #3b82f6, #8b5cf6)',
+                            background: cardStyles.iconGradient,
                             borderRadius: 1.5,
                             display: 'flex',
                             justifyContent: 'center',
@@ -3718,7 +3928,7 @@ const PortNavigationApp = () => {
                           sx={{
                             width: totalCount > 0 ? `${(activeCount / totalCount) * 100}%` : '0%',
                             height: '100%',
-                            background: 'linear-gradient(to right, #4ade80, #3b82f6)',
+                            background: cardStyles.iconGradient,
                             borderRadius: 4,
                             transition: 'width 0.3s',
                           }}
