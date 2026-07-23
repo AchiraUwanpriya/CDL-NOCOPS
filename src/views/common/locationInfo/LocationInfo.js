@@ -1298,6 +1298,7 @@
 
 
 
+import axios from 'axios';
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   Card,
@@ -1559,7 +1560,7 @@ const PortNavigationApp = () => {
   useEffect(() => {
     const fetchSectors = async () => {
       try {
-        const response = await fetch('http://10.0.13.48:8088/ICTDevice/GetHeadBulid', {
+        const response = await fetch(`${axios.defaults.baseURL}ICTDevice/GetHeadBulid`, {
           method: 'GET',
           headers: {
             Accept: 'application/json',
@@ -1643,7 +1644,7 @@ const PortNavigationApp = () => {
 
             try {
               const devResponse = await fetch(
-                `http://10.0.13.48:8088/ICTDevice/GetComDetails?loccode=${sector.Flo_No}&catcodea=${sector.Cat_CodeB}`,
+                `${axios.defaults.baseURL}ICTDevice/GetComDetails?loccode=${sector.Flo_No}&catcodea=${sector.Cat_CodeB}`,
                 { method: 'GET', headers: { Accept: 'application/json' } }
               );
 
@@ -2489,7 +2490,7 @@ const PortNavigationApp = () => {
 
     try {
       const response = await fetch(
-        `http://10.0.13.48:8088/ICTDevice/GetComDetails?loccode=${sector.Flo_No}&catcodea=${sector.Cat_CodeB}`,
+        `${axios.defaults.baseURL}ICTDevice/GetComDetails?loccode=${sector.Flo_No}&catcodea=${sector.Cat_CodeB}`,
         {
           method: 'GET',
           headers: { Accept: 'application/json' },
