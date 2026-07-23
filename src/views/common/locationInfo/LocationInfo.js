@@ -1723,21 +1723,23 @@ const PortNavigationApp = () => {
         // Determine building status from sector results
         let bTotal = 0;
         let bActive = 0;
+        let bDown = 0;
         sectorResults.forEach((r) => {
           if (r.hasDevice) {
             bTotal += r.sectorTotal || 0;
             bActive += r.sectorActive || 0;
+            bDown += r.sectorDown || 0;
           }
         });
 
         let status = 'unknown';
         if (bTotal > 0) {
           if (bActive === 0) {
-            status = 'down'; // Red: all devices inactive
-          } else if (bActive < bTotal) {
-            status = 'partial'; // Yellow: active & inactive both devices
+            status = 'down'; // Red: no active devices
+          } else if (bActive > 0 && bDown > 0) {
+            status = 'partial'; // Yellow: active & inactive both devices present
           } else {
-            status = 'up'; // Green: all devices active
+            status = 'up'; // Green: active devices exist, 0 inactive devices (all active or active + other)
           }
         }
 
@@ -1834,21 +1836,24 @@ const PortNavigationApp = () => {
         const sectors = updatedSectors.filter((s) => s.Build_Code === buildCode);
         let bTotal = 0;
         let bActive = 0;
+        let bDown = 0;
         sectors.forEach((s) => {
           const total = Number(s.ComputerCount || 0);
           const active = Number(s.ActiveCount !== undefined ? s.ActiveCount : total);
+          const down = Number(s.DownCount || 0);
           bTotal += total;
           bActive += active;
+          bDown += down;
         });
 
         let status = 'unknown';
         if (bTotal > 0) {
           if (bActive === 0) {
-            status = 'down'; // Red: all devices inactive
-          } else if (bActive < bTotal) {
-            status = 'partial'; // Yellow: active & inactive both devices
+            status = 'down'; // Red: no active devices
+          } else if (bActive > 0 && bDown > 0) {
+            status = 'partial'; // Yellow: active & inactive both devices present
           } else {
-            status = 'up'; // Green: all devices active
+            status = 'up'; // Green: active devices exist, 0 inactive devices (all active or active + other)
           }
         }
 
@@ -1937,11 +1942,11 @@ const PortNavigationApp = () => {
 
   /**
    * Returns background, border, hover shadow, and icon gradient for floor/sector cards:
-   * - all devices inactive -> Red
+   * - no active devices -> Red
    * - active & inactive both -> Yellow
-   * - all devices active -> Green
+   * - active devices present & 0 inactive devices -> Green (includes active + other devices)
    */
-  const getCardStatusStyles = (totalCount, activeCount) => {
+  const getCardStatusStyles = (totalCount, activeCount, downCount = 0) => {
     if (!totalCount || totalCount === 0) {
       return {
         bg: 'rgba(255,255,255,0.05)',
@@ -1953,7 +1958,7 @@ const PortNavigationApp = () => {
     }
 
     if (activeCount === 0) {
-      // Red: All devices inactive
+      // Red: No active devices
       return {
         bg: 'rgba(244, 67, 54, 0.08)',
         hoverBg: 'rgba(244, 67, 54, 0.14)',
@@ -1963,7 +1968,7 @@ const PortNavigationApp = () => {
       };
     }
 
-    if (activeCount < totalCount) {
+    if (activeCount > 0 && downCount > 0) {
       // Yellow: Both active and inactive devices present
       return {
         bg: 'rgba(245, 158, 11, 0.08)',
@@ -1974,7 +1979,7 @@ const PortNavigationApp = () => {
       };
     }
 
-    // Green: All devices active
+    // Green: Active devices present and 0 inactive devices (all active or active + other devices)
     return {
       bg: 'rgba(76, 175, 80, 0.08)',
       hoverBg: 'rgba(76, 175, 80, 0.14)',
@@ -3581,7 +3586,7 @@ const PortNavigationApp = () => {
               const totalCount = floor.ComputerCount;
               const inactiveCount = Number(floor.DownCount || 0);
               const otherCount = Number(floor.OtherCount || 0);
-              const cardStyles = getCardStatusStyles(totalCount, activeCount);
+              const cardStyles = getCardStatusStyles(totalCount, activeCount, inactiveCount);
 
               return (
                 <Grid item xs={12} sm={6} md={3} key={floor.Flo_No}>
@@ -3804,7 +3809,7 @@ const PortNavigationApp = () => {
               const activeCount = Number(sector.ActiveCount !== undefined ? sector.ActiveCount : (sector.ComputerCount || 0));
               const inactiveCount = Number(sector.DownCount || 0);
               const otherCount = Number(sector.OtherCount || 0);
-              const cardStyles = getCardStatusStyles(totalCount, activeCount);
+              const cardStyles = getCardStatusStyles(totalCount, activeCount, inactiveCount);
 
               return (
                 <Grid item xs={12} sm={6} md={4} lg={3} key={`${sector.Flo_No}-${sector.Cat_CodeB}`}>
