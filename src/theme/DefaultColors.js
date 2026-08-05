@@ -67,69 +67,57 @@ const baselightTheme = {
 const baseDarkTheme = {
   direction: 'ltr',
   palette: {
-    primary: {
-      main: '#5D87FF',
-      light: '#ECF2FF',
-      dark: '#4570EA',
+    primary:   { 
+      main: '#29B6F6',
+      light: '#0F3B4D',
+      dark: '#0EA5C9'
     },
-    secondary: {
-      main: '#777e89',
-      light: '#1C455D',
-      dark: '#173f98',
+    secondary: { 
+      main: '#22D3EE',
+      light: '#0C3640',
+      dark: '#0FB8CF'
     },
-    success: {
-      main: '#13DEB9',
-      light: '#1B3C48',
-      dark: '#02b3a9',
-      contrastText: '#ffffff',
+    success:   {
+      main: '#4ADE80',
+      light: '#12321F',
+      dark: '#22C55E',
+      contrastText: '#ffffff'
     },
-    info: {
-      main: '#539BFF',
-      light: '#223662',
-      dark: '#1682d4',
-      contrastText: '#ffffff',
+    info:      {
+      main: '#29B6F6',
+      light: '#0F3B4D',
+      dark: '#0EA5C9',
+      contrastText: '#ffffff'
     },
-    error: {
-      main: '#FA896B',
-      light: '#4B313D',
-      dark: '#f3704d',
-      contrastText: '#ffffff',
+    error:     {
+      main: '#F44336',
+      light: '#3A1B1B',
+      dark: '#D32F2F',
+      contrastText: '#ffffff'
     },
-    warning: {
-      main: '#FFAE1F',
-      light: '#4D3A2A',
-      dark: '#ae8e59',
-      contrastText: '#ffffff',
+    warning:   { 
+      main: '#F59E0B',
+      light: '#3A2D12',
+      dark: '#D97706',
+      contrastText: '#ffffff'
     },
     purple: {
-      A50: '#EBF3FE',
+      A50: '#0F3B4D',
       A100: '#6610f2',
-      A200: '#557fb9',
+      A200: '#557fb9'
     },
     grey: {
-      100: '#333F55',
-      200: '#465670',
-      300: '#7C8FAC',
-      400: '#DFE5EF',
-      500: '#EAEFF4',
-      600: '#F2F6FA',
-      A700: '#465670',
+      100: '#111C30', 200: '#1B2A44', 300: '#2A3B57',
+      400: '#7C93B3', 500: '#A9BBD4', 600: '#E6EDF7', A700: '#1B2A44',
     },
-    text: {
-      primary: '#EAEFF4',
-      secondary: '#7C8FAC',
-    },
+    text: { primary: '#E6EDF7', secondary: '#7C93B3' },
     action: {
-      disabledBackground: 'rgba(73,82,88,0.12)',
-      hoverOpacity: 0.02,
-      hover: '#333F55',
+      disabledBackground: 'rgba(124,147,179,0.12)',
+      hoverOpacity: 0.04,
+      hover: '#122036',
     },
-    divider: '#333F55',
-    background: {
-      default: '#171c23',
-      dark: '#171c23',
-      paper: '#171c23',
-    },
+    divider: '#1B2A44',
+    background: { default: '#0A0F1C', dark: '#070B14', paper: '#0D1526' },
   },
 };
 

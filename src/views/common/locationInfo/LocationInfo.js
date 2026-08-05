@@ -1317,6 +1317,7 @@ import {
   InputAdornment,
   TextField,
   Fab,
+  useTheme
 } from '@mui/material';
 import {
   LocationOn,
@@ -1342,6 +1343,7 @@ import SearchIcon from '@mui/icons-material/Search';
 import CloseIcon from '@mui/icons-material/Close';
 import UpsIcon from '../../../assets/images/icons/ups.ico';
 import DeviceInfoService from '../../../store/services/common/deviceInfo/DeviceInfoService';
+import { color } from 'framer-motion';
 
 /**
  * Categorizes device machine status according to rules:
@@ -1520,6 +1522,8 @@ const ZoomableImage = ({ src, alt }) => {
 };
 
 const PortNavigationApp = () => {
+  const theme = useTheme();
+  const isDarkMode = theme.palette.mode === 'dark';
   const dispatch = useDispatch();
   const [currentView, setCurrentView] = useState('port');
   const [selectedDock, setSelectedDock] = useState(null);
@@ -1582,9 +1586,7 @@ const PortNavigationApp = () => {
     fetchSectors();
   }, []);
 
-  /**
-   * Evaluates machine status category ('active', 'down', 'other') from status map.
-   */
+  
   const getDeviceCategory = (deviceName, statusMap) => {
     if (!deviceName || !statusMap) return 'down';
     const entry = statusMap[deviceName.trim().toLowerCase()];
@@ -1592,11 +1594,7 @@ const PortNavigationApp = () => {
     return getDeviceStatusCategory(entry).category;
   };
 
-  /**
-   * Fetches all machine statuses from GetMachineStatus in one call, then
-   * for each building fetches its devices via GetComDetails and cross-references
-   * the status map. If any device is down, marks the location as 'down' (red).
-   */
+
   const pingAllLocations = async (sectorsData) => {
     if (!sectorsData || sectorsData.length === 0) return;
 
@@ -1735,11 +1733,11 @@ const PortNavigationApp = () => {
         let status = 'unknown';
         if (bTotal > 0) {
           if (bActive === 0) {
-            status = 'down'; // Red: no active devices
+            status = 'down'; 
           } else if (bActive > 0 && bDown > 0) {
-            status = 'partial'; // Yellow: active & inactive both devices present
+            status = 'partial'; 
           } else {
-            status = 'up'; // Green: active devices exist, 0 inactive devices (all active or active + other)
+            status = 'up'; 
           }
         }
 
@@ -1849,11 +1847,11 @@ const PortNavigationApp = () => {
         let status = 'unknown';
         if (bTotal > 0) {
           if (bActive === 0) {
-            status = 'down'; // Red: no active devices
+            status = 'down'; 
           } else if (bActive > 0 && bDown > 0) {
-            status = 'partial'; // Yellow: active & inactive both devices present
+            status = 'partial';
           } else {
-            status = 'up'; // Green: active devices exist, 0 inactive devices (all active or active + other)
+            status = 'up'; 
           }
         }
 
@@ -1919,13 +1917,15 @@ const PortNavigationApp = () => {
    * - 'loading' → blue (default)
    */
   const getDockPingColor = (dockId, isSelected, isHovered) => {
-    if (isHovered) return '#1565c0';
+    // if (isHovered) return '#1565c0';
+    if (isHovered) return isDarkMode ? '#0B84A8' : '#1565c0';
     if (isSelected) return '#ff9800';
     const status = locationPingStatus[dockId];
     if (status === 'down') return '#f44336';
     if (status === 'partial') return '#f59e0b';
     if (status === 'up') return '#4caf50';
-    return '#1976d2'; // default blue (loading)
+    // return '#1976d2'; // default blue (loading)
+    return isDarkMode ? '#29B6F6' : '#1976d2'; // default blue (loading)
   };
 
   /**
@@ -1953,7 +1953,8 @@ const PortNavigationApp = () => {
         hoverBg: 'rgba(255,255,255,0.1)',
         border: '1px solid rgba(255,255,255,0.1)',
         hoverShadow: '0 4px 12px rgba(0,0,0,0.3)',
-        iconGradient: 'linear-gradient(to right, #3b82f6, #8b5cf6)',
+        // iconGradient: 'linear-gradient(to right, #3b82f6, #8b5cf6)',
+        iconGradient: isDarkMode ? 'linear-gradient(to right, #29B6F6, #22D3EE)' : 'linear-gradient(to right, #3b82f6, #8b5cf6)',
       };
     }
 
@@ -2581,7 +2582,8 @@ const PortNavigationApp = () => {
         printer.name.toLowerCase().includes(searchQuery.toLowerCase()),
       );
       sidebarTitle = 'Printer Locations';
-      sidebarIcon = <Print sx={{ mr: 1, fontSize: 16, color: '#1976d2' }} />;
+      // sidebarIcon = <Print sx={{ mr: 1, fontSize: 16, color: '#1976d2' }} />;
+      sidebarIcon = <Print sx={{ mr: 1, fontSize: 16, color: isDarkMode ? '#29B6F6' : '#1976d2' }} />;
       hoveredState = hoveredPrinter;
       setHoveredState = setHoveredPrinter;
     } else if (showUps) {
@@ -2595,7 +2597,8 @@ const PortNavigationApp = () => {
     } else {
       sidebarItems = filteredDocks;
       sidebarTitle = 'Building Locations';
-      sidebarIcon = <LocationOn sx={{ mr: 1, fontSize: 16, color: '#1976d2' }} />;
+      // sidebarIcon = <LocationOn sx={{ mr: 1, fontSize: 16, color: '#1976d2' }} />;
+      sidebarIcon = <LocationOn sx={{ mr: 1, fontSize: 16, color: isDarkMode ? '#29B6F6' : '#1976d2' }} />;
       hoveredState = hoveredDock;
       setHoveredState = setHoveredDock;
     }
@@ -2606,7 +2609,8 @@ const PortNavigationApp = () => {
           position: 'relative',
           width: '100%',
           height: '90vh',
-          backgroundColor: '#f4f4f4',
+          // backgroundColor: '#f4f4f4',
+          backgroundColor: isDarkMode ? '#0A0F1C' : '#f4f4f4',
           overflow: 'hidden',
           display: 'flex',
           fontFamily: 'Arial, sans-serif',
@@ -2616,8 +2620,10 @@ const PortNavigationApp = () => {
         <Box
           sx={{
             width: 280,
-            backgroundColor: '#ffffff',
-            borderRight: '1px solid #b8b6b6ff',
+            // backgroundColor: '#ffffff',
+            backgroundColor: isDarkMode ? '#0D1526' : '#ffffff',
+            // borderRight: '1px solid #b8b6b6ff',
+            borderRight: isDarkMode ? '1px solid #1B2A44' : '1px solid #b8b6b6ff',
             display: 'flex',
             flexDirection: 'column',
             boxShadow: 2,
@@ -2627,8 +2633,10 @@ const PortNavigationApp = () => {
           <Box
             sx={{
               p: 2,
-              borderBottom: '1px solid #e0e0e0',
-              background: 'linear-gradient(135deg, #1976d2, #1565c0)',
+              // borderBottom: '1px solid #e0e0e0',
+              borderBottom: isDarkMode ? '1px solid #1B2A44' : '1px solid #e0e0e0',
+              // background: 'linear-gradient(135deg, #1976d2, #1565c0)',
+              background: isDarkMode ? 'linear-gradient(135deg, #0EA5C9, #0B4A63)' : 'linear-gradient(135deg, #1976d2, #1565c0)',
             }}
           >
             <Typography
@@ -2641,7 +2649,8 @@ const PortNavigationApp = () => {
           </Box>
 
           {/* Search Bar */}
-          <Box sx={{ p: 1.2, borderBottom: '1px solid #f0f0f0' }}>
+          {/* <Box sx={{ p: 1.2, borderBottom: '1px solid #f0f0f0' }}> */}
+          <Box sx={{ p: 1.2, borderBottom: isDarkMode ? '1px solid #1B2A44' : '1px solid #f0f0f0' }}>
             <TextField
               size="small"
               fullWidth
@@ -2651,7 +2660,8 @@ const PortNavigationApp = () => {
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
-                    <SearchIcon fontSize="small" sx={{ color: 'gray' }} />
+                    {/* <SearchIcon fontSize="small" sx={{ color: 'gray' }} /> */}
+                    <SearchIcon fontSize="small" sx={{ color: isDarkMode ? '#7C93B3' : 'gray' }} />
                   </InputAdornment>
                 ),
               }}
@@ -2667,7 +2677,8 @@ const PortNavigationApp = () => {
                 width: '6px',
               },
               '&::-webkit-scrollbar-thumb': {
-                backgroundColor: '#c1c1c1',
+                // backgroundColor: '#c1c1c1',
+                backgroundColor: isDarkMode ? '#2A3B57' : '#c1c1c1',
                 borderRadius: '6px',
               },
             }}
@@ -2677,8 +2688,10 @@ const PortNavigationApp = () => {
               const isHovered = hoveredState === item.id;
 
               let itemColors = {
-                main: '#1976d2',
-                text: '#1976d2',
+                // main: '#1976d2',
+                main: isDarkMode ? '#29B6F6' : '#1976d2',
+                // text: '#1976d2',
+                text: isDarkMode ? '#29B6F6' : '#1976d2',
                 bgColor: 'rgba(25, 118, 210, 0.08)',
                 hoverBg: 'rgba(25, 118, 210, 0.16)',
               };
@@ -2692,8 +2705,10 @@ const PortNavigationApp = () => {
                 };
               } else if (showPrinters) {
                 itemColors = {
-                  main: '#1976d2',
-                  text: '#1565c0',
+                  // main: '#1976d2',
+                  main: isDarkMode ? '#29B6F6' : '#1976d2',
+                  // text: '#1565c0',
+                  text: isDarkMode ? '#0B84A8' : '#1565c0',
                   bgColor: 'rgba(25, 118, 210, 0.08)',
                   hoverBg: 'rgba(25, 118, 210, 0.16)',
                 };
@@ -2807,7 +2822,8 @@ const PortNavigationApp = () => {
             })}
 
             {sidebarItems.length === 0 && (
-              <Typography variant="body2" sx={{ color: 'gray', p: 2, textAlign: 'center' }}>
+              // <Typography variant="body2" sx={{ color: 'gray', p: 2, textAlign: 'center' }}>
+              <Typography variant="body2" sx={{ color: isDarkMode ? '#7C93B3' : 'gray', p: 2, textAlign: 'center' }}>
                 No items found
               </Typography>
             )}
@@ -2839,7 +2855,8 @@ const PortNavigationApp = () => {
                   setOpenImage('Network_Switch_Map');
                 }}
                 sx={{
-                  bgcolor: 'white',
+                  // bgcolor: 'white',
+                  bgcolor: isDarkMode ? '#101B2D' : 'white',
                   boxShadow: 2,
                   '&:hover': { boxShadow: '0 0 10px 2px #3b82f6' },
                 }}
@@ -2855,7 +2872,8 @@ const PortNavigationApp = () => {
                   setOpenImage('LAN_REVISED');
                 }}
                 sx={{
-                  bgcolor: 'white',
+                  // bgcolor: 'white',
+                  bgcolor: isDarkMode ? '#101B2D' : 'white',
                   boxShadow: 2,
                   '&:hover': { boxShadow: '0 0 10px 2px #3b82f6' },
                 }}
@@ -2868,7 +2886,8 @@ const PortNavigationApp = () => {
               <IconButton
                 onClick={toggleSwitches}
                 sx={{
-                  bgcolor: showSwitches ? '#e0f2fe' : 'white',
+                  // bgcolor: showSwitches ? '#e0f2fe' : 'white',
+                  bgcolor: showSwitches ? (isDarkMode ? 'rgba(41,182,246,0.18)' : '#e0f2fe') : (isDarkMode ? '#101B2D' : 'white'),
                   boxShadow: 2,
                   '&:hover': { boxShadow: '0 0 10px 2px #3b82f6' },
                 }}
@@ -2881,12 +2900,14 @@ const PortNavigationApp = () => {
               <IconButton
                 onClick={togglePrinters}
                 sx={{
-                  bgcolor: showPrinters ? '#e0f2fe' : 'white',
+                  // bgcolor: showPrinters ? '#e0f2fe' : 'white',
+                  bgcolor: showPrinters ? (isDarkMode ? 'rgba(41,182,246,0.18)' : '#e0f2fe') : (isDarkMode ? '#101B2D' : 'white'),
                   boxShadow: 2,
                   '&:hover': { boxShadow: '0 0 10px 2px #3b82f6' },
                 }}
               >
-                <Print sx={{ color: showPrinters ? '#1976d2' : '#424242' }} />
+                {/* <Print sx={{ color: showPrinters ? '#1976d2' : '#424242' }} /> */}
+                <Print sx={{ color: showPrinters ? (isDarkMode ? '#29B6F6' : '#1976d2') : (isDarkMode ? '#A9BBD4' : '#424242') }} />
               </IconButton>
             </Tooltip>
 
@@ -2894,7 +2915,8 @@ const PortNavigationApp = () => {
               <IconButton
                 onClick={toggleUps}
                 sx={{
-                  bgcolor: showUps ? '#e0f2fe' : 'white',
+                  // bgcolor: showUps ? '#e0f2fe' : 'white',
+                  bgcolor: showUps ? (isDarkMode ? 'rgba(41,182,246,0.18)' : '#e0f2fe') : (isDarkMode ? '#101B2D' : 'white'),
                   boxShadow: 2,
                   '&:hover': { boxShadow: '0 0 10px 2px #3b82f6' },
                 }}
@@ -2907,7 +2929,8 @@ const PortNavigationApp = () => {
                     width: 24,
                     height: 24,
                     filter: showUps ? 'none' : 'grayscale(100%)',
-                    bgcolor: showPrinters ? '#e0f2fe' : 'white',
+                    // bgcolor: showPrinters ? '#e0f2fe' : 'white',
+                    bgcolor: showPrinters ? (isDarkMode ? 'rgba(41,182,246,0.18)' : '#e0f2fe') : (isDarkMode ? '#101B2D' : 'white'),
                   }}
                 />
               </IconButton>
@@ -2922,7 +2945,8 @@ const PortNavigationApp = () => {
               left: 0,
               right: 0,
               bottom: 0,
-              background: 'linear-gradient(135deg, #1976d2 0%, #42a5f5 50%, #1976d2 100%)',
+              // background: 'linear-gradient(135deg, #1976d2 0%, #42a5f5 50%, #1976d2 100%)',
+              background: isDarkMode ? 'linear-gradient(135deg, #0B4A63 0%, #29B6F6 50%, #0B4A63 100%)' : 'linear-gradient(135deg, #1976d2 0%, #42a5f5 50%, #1976d2 100%)',
               opacity: 0.15,
             }}
           />
@@ -2960,7 +2984,8 @@ const PortNavigationApp = () => {
                         sx={{
                           position: 'absolute',
                           bottom: isSelected ? '44px' : '34px', // Floats up dynamically when selected
-                          backgroundColor: '#1e293b',
+                          // backgroundColor: '#1e293b',
+                          backgroundColor: isDarkMode ? '#101B2D' : '#1e293b',
                           color: '#ffffff',
                           border: '1px solid rgba(255,255,255,0.2)',
                           borderRadius: '6px',
@@ -3111,7 +3136,8 @@ const PortNavigationApp = () => {
                           },
                           animation: getDockAnimation(dock.id, isSelected, isHovered),
                           '&:hover': {
-                            backgroundColor: '#1565c0',
+                            // backgroundColor: '#1565c0',
+                            backgroundColor: isDarkMode ? '#0B84A8' : '#1565c0',
                           },
                         }}
                       >
@@ -3207,7 +3233,8 @@ const PortNavigationApp = () => {
                       onMouseLeave={() => setHoveredPrinter(null)}
                       sx={{
                         color: '#fff',
-                        backgroundColor: isHovered ? '#f44336' : '#1976d2',
+                        // backgroundColor: isHovered ? '#f44336' : '#1976d2',
+                        backgroundColor: isHovered ? '#f44336' : (isDarkMode ? '#29B6F6' : '#1976d2'),
                         position: 'absolute',
                         left: printer.x,
                         top: printer.y,
@@ -3339,7 +3366,9 @@ const PortNavigationApp = () => {
                 position: 'absolute',
                 top: 20,
                 right: 20,
-                backgroundColor: 'rgba(255,255,255,0.9)',
+                // backgroundColor: 'rgba(255,255,255,0.9)',
+                backgroundColor: isDarkMode ? 'rgba(13,21,38,0.92)' : 'rgba(255,255,255,0.9)',
+                border: isDarkMode ? '1px solid #1B2A44' : 'none',
                 borderRadius: 2,
                 boxShadow: 3,
                 p: 2,
@@ -3358,7 +3387,8 @@ const PortNavigationApp = () => {
                       ? '#b45309'
                       : locationPingStatus[selectedDock.id] === 'up'
                       ? '#2e7d32'
-                      : '#1976d2',
+                      // : '#1976d2',
+                      : (isDarkMode ? '#29B6F6' : '#1976d2'),
                 }}
               >
                 {selectedDock.name}
@@ -3420,7 +3450,8 @@ const PortNavigationApp = () => {
                   y1={`${y1 * 100}%`}
                   x2={`${x2 * 100}%`}
                   y2={`${y2 * 100}%`}
-                  stroke="#2196f3"
+                  // stroke="#2196f3"
+                  stroke={isDarkMode ? "#29B6F6" : "#2196f3"}
                   strokeWidth="4"
                   strokeDasharray="8,8"
                   filter="url(#glow)"
@@ -3529,7 +3560,8 @@ const PortNavigationApp = () => {
         sx={{
           minHeight: '100vh',
           p: 4,
-          background: 'linear-gradient(to bottom right, #1e293b, #1e40af)',
+          // background: 'linear-gradient(to bottom right, #1e293b, #1e40af)',
+          background: isDarkMode ? 'linear-gradient(to bottom right, #0D1526, #123253)' : 'linear-gradient(to bottom right, #1e293b, #1e40af)',
         }}
       >
         <Box sx={{ maxWidth: '1400px', mx: 'auto' }}>
@@ -3656,7 +3688,8 @@ const PortNavigationApp = () => {
                       {/* Counts */}
                       <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                          <Monitor size={16} color="#93c5fd" />
+                          {/* <Monitor size={16} color="#93c5fd" /> */}
+                          <Monitor size={16} color={isDarkMode ? "#67D9F5" : "#93c5fd"} />
                           <Typography variant="body2" color="white">
                             Total PCs
                           </Typography>
@@ -3756,7 +3789,8 @@ const PortNavigationApp = () => {
         sx={{
           minHeight: '100vh',
           p: 2,
-          background: 'linear-gradient(to bottom right, #1e293b, #1e40af)',
+          // background: 'linear-gradient(to bottom right, #1e293b, #1e40af)',
+          background: isDarkMode ? 'linear-gradient(to bottom right, #0D1526, #123253)' : 'linear-gradient(to bottom right, #1e293b, #1e40af)',
           overflow: 'hidden',
         }}
       >
@@ -3863,7 +3897,8 @@ const PortNavigationApp = () => {
                       {/* Counts */}
                       <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.75 }}>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                          <Monitor size={14} color="#93c5fd" />
+                          {/* <Monitor size={14} color="#93c5fd" /> */}
+                          <Monitor size={14} color={isDarkMode ? "#67D9F5" : "#93c5fd"} />
                           <Typography variant="body2" color="white" sx={{ fontSize: '0.8rem' }}>
                             Total PCs
                           </Typography>

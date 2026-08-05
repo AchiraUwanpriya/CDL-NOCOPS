@@ -20,12 +20,14 @@ const DoughnutChart = ({ title, data, showLegend = true, customLegendType = 'def
   }, [data]);
 
   const theme = useTheme();
+  const isDarkMode = theme.palette.mode === 'dark';
   const primary = theme.palette.primary.main;
   const primarylight = theme.palette.primary.light;
   const secondary = theme.palette.secondary.main;
   const secondarylight = theme.palette.secondary.light;
   const warning = theme.palette.warning.main;
 
+  const darkModeChartColors = ['#29B6F6', '#22D3EE', '#F59E0B', '#F87171', '#A78BFA', '#4ADE80', '#F472B6', '#FBBF24'];
   const optionsdoughnutchart = {
     labels: chartData.labels,
     chart: {
@@ -90,7 +92,7 @@ const DoughnutChart = ({ title, data, showLegend = true, customLegendType = 'def
       fontWeight: 'bold',
       fontSize: '10px',
       labels: {
-        colors: 'dark',
+        colors: isDarkMode ? '#E6EDF7' : 'dark',
       },
       formatter: function (seriesName, opts) {
         if (customLegendType === 'countOnly') {
@@ -104,7 +106,7 @@ const DoughnutChart = ({ title, data, showLegend = true, customLegendType = 'def
 
 
     // colors: ['#4c84ff', '#8fa9ff', '#ff6384', '#ffb3b3', '#ffc107'],
-    colors: [primary, primarylight, secondary, secondarylight, warning],
+    colors: isDarkMode ? darkModeChartColors : [primary, primarylight, secondary, secondarylight, warning],
     tooltip: {
       theme: 'dark',
       fillSeriesColor: false,
