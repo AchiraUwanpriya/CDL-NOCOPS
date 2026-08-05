@@ -1,8 +1,8 @@
 //note chnaged according to DeviceAvailablity.js page code 
 import axios from 'axios';
 
-// const API_URL = 'http://10.0.13.48:8088/';
-const API_URL = 'https://esystems.cdl.lk/backend/NOCOPS';
+const API_URL = 'http://10.0.13.48:8088/';
+// const API_URL = 'https://esystems.cdl.lk/backend/NOCOPS';
 
 
 export const deviceStatusAPI = {

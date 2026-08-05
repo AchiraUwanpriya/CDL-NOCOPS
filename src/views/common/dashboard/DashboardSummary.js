@@ -114,7 +114,7 @@
 // export default DashboardSummary;
 
 import React, { useEffect, useState } from 'react';
-import { Box, Grid, Paper, Typography, Avatar, Stack } from '@mui/material';
+import { Box, Grid, Paper, Typography, Avatar, Stack, useTheme } from '@mui/material';
 import { useDispatch, useSelector } from 'react-redux';
 import { GetHelpDeskChartCounts } from '../../../store/slices/common/helpDesk/HelpDeskTicketSlices';
 import { DoPin } from '../../../store/slices/common/deviceInfo/DeviceInfoSlices';
@@ -131,6 +131,7 @@ import RFID from "../../../assets/deviceinfo/RFID.png"
 import Other from "../../../assets/deviceinfo/Other.png"
 
 const DashboardSummary = () => {
+  const theme = useTheme();
   const dispatch = useDispatch();
   const { HDChartCounts } = useSelector((state) => state.helpDeskTicketSlices);
   const { DoPinData, loading } = useSelector((state) => state.DeviceInfoSlices);
@@ -333,7 +334,8 @@ const DashboardSummary = () => {
                     position: 'sticky',
                     top: 0,
                     zIndex: 1,
-                    backgroundColor: 'white',
+                    // backgroundColor: 'white',
+                    backgroundColor: theme.palette.background.paper,
                     p: 2,
                   }}
                 >
@@ -404,7 +406,8 @@ const DashboardSummary = () => {
                 position: 'sticky',
                 top: 0,
                 zIndex: 1,
-                backgroundColor: 'white', // Match Paper background
+                // backgroundColor: 'white', // Match Paper background
+                backgroundColor: theme.palette.background.paper,
                 p: 2,
               }}
             >

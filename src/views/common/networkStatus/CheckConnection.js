@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { TextField, Button, Container, Box, Typography, Alert, Snackbar, Autocomplete } from '@mui/material';
+import { TextField, Button, Container, Box, Typography, Alert, Snackbar, Autocomplete, useTheme } from '@mui/material';
 import Chart from 'chart.js/auto';
 import 'chartjs-adapter-date-fns';
 import StreamingPlugin from 'chartjs-plugin-streaming';
@@ -11,7 +11,8 @@ const ipList = Array.from({ length: 50 }, (_, i) => `172.30.30.${100 + i}`);
 const defaultIP = '172.30.30.147';
 
 const CheckConnection = () => {
-
+  const theme = useTheme();
+  const isDarkMode = theme.palette.mode === 'dark';
 
   const [ipAddress, setIpAddress] = useState(defaultIP); // Hardcoded IP for auto-start
   const [isMonitoring, setIsMonitoring] = useState(true); // Start monitoring automatically
@@ -112,6 +113,9 @@ const CheckConnection = () => {
               scales: {
                 x: {
                   type: "realtime",
+                  ticks: {
+                    color: isDarkMode ? "#FFFFFF" : undefined,
+                  },
                   realtime: {
                     onRefresh: async function (chart) {
                       try {
@@ -178,11 +182,12 @@ const CheckConnection = () => {
                     display: true,
                     text: "Speed (Mbps)",
                     font: { size: 15 },
-                    color: "#6c757d",
+                    color: isDarkMode ? "#FFFFFF" : "#6c757d",
                   },
                   ticks: {
                     beginAtZero: true,
                     stepSize: 200,
+                    color: isDarkMode ? "#FFFFFF" : undefined,
                     callback: function (value) {
                       return `${value} Mbps`;
                     },
@@ -195,9 +200,13 @@ const CheckConnection = () => {
                   display: true,
                   text: index === 0 ? 'Bandwidth Speed Monitor' : index === 1 ? 'Upload Speed Monitor' : 'Download Speed Monitor',
                   font: { size: 20 },
+                  color: isDarkMode ? "#FFFFFF" : undefined,
                 },
                 legend: {
                   position: 'top',
+                  labels: {
+                    color: isDarkMode ? "#FFFFFF" : undefined,
+                  },
                 },
               },
             },
@@ -210,7 +219,7 @@ const CheckConnection = () => {
     return () => {
       chartInstances.current.forEach(chart => chart?.destroy());
     };
-  }, [ipAddress, isMonitoring]);
+}, [ipAddress, isMonitoring, isDarkMode]);
 
   const handleStopMonitoring = () => {
     setIsMonitoring(false);
@@ -344,7 +353,10 @@ const CheckConnection = () => {
                     boxShadow: '0px 4px 8px rgba(0, 0, 0, 0.5)',
                     borderRadius: '8px',
                     padding: '35px',
-                    backgroundColor: '#fff',
+                    // backgroundColor: '#fff',
+                    // width: '100%',
+                    backgroundColor: isDarkMode ? '#0D1526' : '#fff',
+                    border: isDarkMode ? '1px solid #1B2A44' : 'none',
                     width: '100%',
                     ml: -1.5,
                   }}>

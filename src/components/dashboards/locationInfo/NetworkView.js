@@ -528,6 +528,7 @@ import {
   CircularProgress,
   Chip,
   Tooltip,
+  useTheme,
 } from '@mui/material';
 import { ArrowBack, Computer, Print, Storage } from '@mui/icons-material';
 import DeviceInfoService from '../../../store/services/common/deviceInfo/DeviceInfoService';
@@ -576,6 +577,8 @@ const NetworkView = ({
   highlightedDeviceName,
   setHighlightedDeviceName,
 }) => {
+  const theme = useTheme();
+  const isDarkMode = theme.palette.mode === 'dark';
   const [networkDevices, setNetworkDevices] = useState([]);
   const [openImage, setOpenImage] = useState(false);
   const [openDetails, setOpenDetails] = useState(false);
@@ -728,7 +731,8 @@ const NetworkView = ({
       case 'a':
         return '#10b981';
       case 'ready':
-        return '#3b82f6';
+        // return '#3b82f6';
+        return isDarkMode ? '#29B6F6' : '#3b82f6';
       case 'offline':
       case 'error':
         return '#ef4444';
@@ -804,7 +808,8 @@ const NetworkView = ({
       ? 'linear-gradient(135deg, #7f1d1d, #ef444488)'
       : isOther
       ? 'linear-gradient(135deg, #4b5563, #6b728088)'
-      : 'linear-gradient(135deg, #3b82f6, #3b82f688)';
+      // : 'linear-gradient(135deg, #3b82f6, #3b82f688)';
+      : (isDarkMode ? 'linear-gradient(135deg, #29B6F6, #29B6F688)' : 'linear-gradient(135deg, #3b82f6, #3b82f688)');
 
     let tooltipPingLabel = '🟢 Active Device';
     if (isDown) {
@@ -978,7 +983,8 @@ const NetworkView = ({
       sx={{
         minHeight: '100vh',
         p: 2,
-        background: 'linear-gradient(to bottom right, #1e293b, #1e40af)',
+        // background: 'linear-gradient(to bottom right, #1e293b, #1e40af)',
+        background: isDarkMode ? 'linear-gradient(to bottom right, #0D1526, #123253)' : 'linear-gradient(to bottom right, #1e293b, #1e40af)',
         overflow: 'hidden',
       }}
     >
@@ -1084,7 +1090,8 @@ const NetworkView = ({
         {/* Summary */}
         <Grid container spacing={2} justifyContent="center" alignItems="center" marginTop='2px'>
           <Grid item>
-            <Button variant="contained" sx={{ bgcolor: '#1976d2' }}>
+            {/* <Button variant="contained" sx={{ bgcolor: '#1976d2' }}> */}
+            <Button variant="contained" sx={{ bgcolor: isDarkMode ? '#29B6F6' : '#1976d2' }}>
               Total: {networkDevices.length}
             </Button>
           </Grid>
@@ -1179,6 +1186,9 @@ const NetworkView = ({
                 </Typography>
                 <Typography>
                   <strong>Status:</strong> {selectedDevice.Status}
+                </Typography>
+                <Typography>
+                  <strong>Remark:</strong>{selectedDevice.REMARKS || '-'}
                 </Typography>
                 <Divider sx={{ my: 1 }} />
 

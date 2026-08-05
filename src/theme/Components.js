@@ -372,8 +372,10 @@ export default function components(theme) {
     MuiTooltip: {
       styleOverrides: {
         tooltip: {
-          color: theme.palette.background.paper,
-          background: theme.palette.text.primary,
+          // color: theme.palette.background.paper,
+          // background: theme.palette.text.primary,
+          color: theme.palette.mode === 'dark' ? '#E6EDF7' : theme.palette.background.paper,
+          background: theme.palette.mode === 'dark' ? '#1B2A44' : theme.palette.text.primary,
         },
       },
     },
