@@ -2813,149 +2813,12 @@ const PortNavigationApp = () => {
                 const devName = dev.ComputerName || dev.ComputerCode || 'Unknown Device';
                 const devIp = dev.IP_Addres || dev.Com_IP || dev.ip || dev.IpAddress || 'No IP';
                 const isPrinter = (dev.Com_Type || '').toLowerCase().includes('printer');
-                
+
                 const dock = docks.find((d) => d.id === dev.Build_Code);
-                const dockName = dock ? (dock.description || dock.name) : dev.Build_Code;
+                const dockName = dock ? dock.description || dock.name : dev.Build_Code;
                 const floorText = dev.Flo_Code === '0' ? 'Ground Floor' : `${dev.Flo_Code} Floor`;
                 const locationLabel = `${dockName} - ${floorText} - ${dev.Flo_Name}`;
                 const devKey = `${devName}-${devIp}-${index}`;
-            {sidebarItems.map((item) => {
-              const isSelected = selectedDock?.id === item.id && !showSwitches && !showPrinters && !showUps;
-              const isHovered = hoveredState === item.id;
-
-              let itemColors = {
-                // main: '#1976d2',
-                main: isDarkMode ? '#29B6F6' : '#1976d2',
-                // text: '#1976d2',
-                text: isDarkMode ? '#29B6F6' : '#1976d2',
-                bgColor: 'rgba(25, 118, 210, 0.08)',
-                hoverBg: 'rgba(25, 118, 210, 0.16)',
-              };
-
-              if (showSwitches) {
-                itemColors = {
-                  main: '#388e3c',
-                  text: '#2e7d32',
-                  bgColor: 'rgba(56, 142, 60, 0.08)',
-                  hoverBg: 'rgba(56, 142, 60, 0.16)',
-                };
-              } else if (showPrinters) {
-                itemColors = {
-                  // main: '#1976d2',
-                  main: isDarkMode ? '#29B6F6' : '#1976d2',
-                  // text: '#1565c0',
-                  text: isDarkMode ? '#0B84A8' : '#1565c0',
-                  bgColor: 'rgba(25, 118, 210, 0.08)',
-                  hoverBg: 'rgba(25, 118, 210, 0.16)',
-                };
-              } else if (showUps) {
-                itemColors = {
-                  main: '#ed6c02',
-                  text: '#d84315',
-                  bgColor: 'rgba(237, 108, 2, 0.08)',
-                  hoverBg: 'rgba(237, 108, 2, 0.16)',
-                };
-              } else {
-                const status = locationPingStatus[item.id];
-                if (status === 'down') {
-                  itemColors = {
-                    main: '#f44336',
-                    text: '#d32f2f',
-                    bgColor: 'rgba(244, 67, 54, 0.08)',
-                    hoverBg: 'rgba(244, 67, 54, 0.16)',
-                  };
-                } else if (status === 'partial') {
-                  itemColors = {
-                    main: '#f59e0b',
-                    text: '#b45309',
-                    bgColor: 'rgba(245, 158, 11, 0.08)',
-                    hoverBg: 'rgba(245, 158, 11, 0.16)',
-                  };
-                } else if (status === 'up') {
-                  itemColors = {
-                    main: '#4caf50',
-                    text: '#2e7d32',
-                    bgColor: 'rgba(76, 175, 80, 0.08)',
-                    hoverBg: 'rgba(76, 175, 80, 0.16)',
-                  };
-                }
-              }
-
-              const itemIcon = showSwitches ? (
-                <Storage sx={{ mr: 1, fontSize: 18, color: itemColors.main }} />
-              ) : showPrinters ? (
-                <Print sx={{ mr: 1, fontSize: 18, color: itemColors.main }} />
-              ) : showUps ? (
-                <img src={UpsIcon} alt="UPS" style={{ width: 18, height: 18, marginRight: 8 }} />
-              ) : (
-                <LocationOn sx={{ mr: 1, fontSize: 18, color: itemColors.main }} />
-              );
-
-              return (
-                <Tooltip key={item.id} title={item.name} arrow placement="right">
-                  <Box
-                    sx={{
-                      p: 1.5,
-                      pl: 2,
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      backgroundColor: isSelected
-                        ? itemColors.bgColor
-                        : isHovered
-                        ? itemColors.hoverBg
-                        : 'transparent',
-                      borderLeft: isSelected || isHovered
-                        ? `4px solid ${itemColors.main}`
-                        : `4px solid ${itemColors.main}60`,
-                      '&:hover': {
-                        backgroundColor: itemColors.hoverBg,
-                        transform: 'translateX(4px)',
-                      },
-                      transition: 'all 0.25s ease',
-                    }}
-                    onClick={() => {
-                      if (showSwitches) console.log('Switch clicked:', item.name);
-                      else if (showPrinters) console.log('Printer clicked:', item.name);
-                      else if (showUps) console.log('UPS clicked:', item.name);
-                      else handleDockClick(item);
-                    }}
-                    onMouseEnter={() => setHoveredState(item.id)}
-                    onMouseLeave={() => setHoveredState(null)}
-                  >
-                    <Box sx={{ display: 'flex', alignItems: 'center', overflow: 'hidden' }}>
-                      {itemIcon}
-                      <Typography
-                        variant="body2"
-                        noWrap
-                        sx={{
-                          fontSize: '14px',
-                          fontWeight: isSelected || isHovered ? 700 : 600,
-                          color: itemColors.text,
-                        }}
-                      >
-                        {item.name}
-                      </Typography>
-                    </Box>
-
-                    {!showSwitches && !showPrinters && !showUps && (
-                      <Box
-                        sx={{
-                          width: 8,
-                          height: 8,
-                          borderRadius: '50%',
-                          backgroundColor: itemColors.main,
-                          boxShadow: `0 0 6px ${itemColors.main}`,
-                          flexShrink: 0,
-                          ml: 1,
-                        }}
-                      />
-                    )}
-                  </Box>
-                </Tooltip>
-              );
-            })}
 
                 return (
                   <Tooltip key={devKey} title={locationLabel} arrow placement="right">
@@ -2970,7 +2833,7 @@ const PortNavigationApp = () => {
                         borderLeft: '4px solid transparent',
                         borderBottom: '1px solid #f3f4f6',
                         '&:hover': {
-                          backgroundColor: '#f3f4f6',
+                          backgroundColor: isDarkMode ? 'rgba(255,255,255,0.05)' : '#f3f4f6',
                           borderLeft: '4px solid #1976d2',
                           transform: 'translateX(4px)',
                         },
@@ -2980,16 +2843,16 @@ const PortNavigationApp = () => {
                     >
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.5 }}>
                         {isPrinter ? (
-                          <Print sx={{ fontSize: 16, color: '#1976d2' }} />
+                          <Print sx={{ fontSize: 16, color: isDarkMode ? '#29B6F6' : '#1976d2' }} />
                         ) : (
-                          <Computer sx={{ fontSize: 16, color: '#1976d2' }} />
+                          <Computer sx={{ fontSize: 16, color: isDarkMode ? '#29B6F6' : '#1976d2' }} />
                         )}
                         <Typography
                           variant="body2"
                           sx={{
                             fontSize: '14px',
                             fontWeight: 600,
-                            color: '#1e293b',
+                            color: isDarkMode ? '#E2E8F0' : '#1e293b',
                           }}
                         >
                           {devName}
@@ -3006,50 +2869,143 @@ const PortNavigationApp = () => {
                 );
               })
             ) : (
-              sidebarItems.map((item) => (
-                <Tooltip key={item.id} title={item.name} arrow placement="right">
-                  <Box
-                    sx={{
-                      p: 1.5,
-                      pl: 2,
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      backgroundColor: hoveredState === item.id ? '#e3f2fd' : 'transparent',
-                      borderLeft: hoveredState === item.id ? '4px solid #1976d2' : '4px solid transparent',
-                      '&:hover': {
-                        backgroundColor: '#a19d9dff',
-                        transform: 'translateX(4px)',
-                      },
-                      transition: 'all 0.25s ease',
-                    }}
-                    onClick={() => {
-                      if (showSwitches) console.log('Switch clicked:', item.name);
-                      else if (showPrinters) console.log('Printer clicked:', item.name);
-                      else if (showUps) console.log('UPS clicked:', item.name);
-                      else handleDockClick(item);
-                    }}
-                    onMouseEnter={() => setHoveredState(item.id)}
-                    onMouseLeave={() => setHoveredState(null)}
-                  >
-                    {sidebarIcon}
-                    <Typography
-                      variant="body2"
+              sidebarItems.map((item) => {
+                const isSelected = selectedDock?.id === item.id && !showSwitches && !showPrinters && !showUps;
+                const isHovered = hoveredState === item.id;
+
+                let itemColors = {
+                  main: isDarkMode ? '#29B6F6' : '#1976d2',
+                  text: isDarkMode ? '#29B6F6' : '#1976d2',
+                  bgColor: 'rgba(25, 118, 210, 0.08)',
+                  hoverBg: 'rgba(25, 118, 210, 0.16)',
+                };
+
+                if (showSwitches) {
+                  itemColors = {
+                    main: '#388e3c',
+                    text: '#2e7d32',
+                    bgColor: 'rgba(56, 142, 60, 0.08)',
+                    hoverBg: 'rgba(56, 142, 60, 0.16)',
+                  };
+                } else if (showPrinters) {
+                  itemColors = {
+                    main: isDarkMode ? '#29B6F6' : '#1976d2',
+                    text: isDarkMode ? '#0B84A8' : '#1565c0',
+                    bgColor: 'rgba(25, 118, 210, 0.08)',
+                    hoverBg: 'rgba(25, 118, 210, 0.16)',
+                  };
+                } else if (showUps) {
+                  itemColors = {
+                    main: '#ed6c02',
+                    text: '#d84315',
+                    bgColor: 'rgba(237, 108, 2, 0.08)',
+                    hoverBg: 'rgba(237, 108, 2, 0.16)',
+                  };
+                } else {
+                  const status = locationPingStatus[item.id];
+                  if (status === 'down') {
+                    itemColors = {
+                      main: '#f44336',
+                      text: '#d32f2f',
+                      bgColor: 'rgba(244, 67, 54, 0.08)',
+                      hoverBg: 'rgba(244, 67, 54, 0.16)',
+                    };
+                  } else if (status === 'partial') {
+                    itemColors = {
+                      main: '#f59e0b',
+                      text: '#b45309',
+                      bgColor: 'rgba(245, 158, 11, 0.08)',
+                      hoverBg: 'rgba(245, 158, 11, 0.16)',
+                    };
+                  } else if (status === 'up') {
+                    itemColors = {
+                      main: '#4caf50',
+                      text: '#2e7d32',
+                      bgColor: 'rgba(76, 175, 80, 0.08)',
+                      hoverBg: 'rgba(76, 175, 80, 0.16)',
+                    };
+                  }
+                }
+
+                const itemIcon = showSwitches ? (
+                  <Storage sx={{ mr: 1, fontSize: 18, color: itemColors.main }} />
+                ) : showPrinters ? (
+                  <Print sx={{ mr: 1, fontSize: 18, color: itemColors.main }} />
+                ) : showUps ? (
+                  <img src={UpsIcon} alt="UPS" style={{ width: 18, height: 18, marginRight: 8 }} />
+                ) : (
+                  <LocationOn sx={{ mr: 1, fontSize: 18, color: itemColors.main }} />
+                );
+
+                return (
+                  <Tooltip key={item.id} title={item.name} arrow placement="right">
+                    <Box
                       sx={{
-                        fontSize: '14px',
-                        fontWeight: hoveredState === item.id ? 600 : 400,
-                        color: hoveredState === item.id ? '#1976d2' : '#424242',
+                        p: 1.5,
+                        pl: 2,
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        backgroundColor: isSelected
+                          ? itemColors.bgColor
+                          : isHovered
+                          ? itemColors.hoverBg
+                          : 'transparent',
+                        borderLeft: isSelected || isHovered
+                          ? `4px solid ${itemColors.main}`
+                          : `4px solid ${itemColors.main}60`,
+                        '&:hover': {
+                          backgroundColor: itemColors.hoverBg,
+                          transform: 'translateX(4px)',
+                        },
+                        transition: 'all 0.25s ease',
                       }}
+                      onClick={() => {
+                        if (showSwitches) console.log('Switch clicked:', item.name);
+                        else if (showPrinters) console.log('Printer clicked:', item.name);
+                        else if (showUps) console.log('UPS clicked:', item.name);
+                        else handleDockClick(item);
+                      }}
+                      onMouseEnter={() => setHoveredState(item.id)}
+                      onMouseLeave={() => setHoveredState(null)}
                     >
-                      {item.name}
-                    </Typography>
-                  </Box>
-                </Tooltip>
-              ))
+                      <Box sx={{ display: 'flex', alignItems: 'center', overflow: 'hidden' }}>
+                        {itemIcon}
+                        <Typography
+                          variant="body2"
+                          noWrap
+                          sx={{
+                            fontSize: '14px',
+                            fontWeight: isSelected || isHovered ? 700 : 600,
+                            color: itemColors.text,
+                          }}
+                        >
+                          {item.name}
+                        </Typography>
+                      </Box>
+
+                      {!showSwitches && !showPrinters && !showUps && (
+                        <Box
+                          sx={{
+                            width: 8,
+                            height: 8,
+                            borderRadius: '50%',
+                            backgroundColor: itemColors.main,
+                            boxShadow: `0 0 6px ${itemColors.main}`,
+                            flexShrink: 0,
+                            ml: 1,
+                          }}
+                        />
+                      )}
+                    </Box>
+                  </Tooltip>
+                );
+              })
             )}
 
             {searchType === 'devices' && searchQuery.trim() !== '' && filteredDevices.length === 0 && (
-              <Typography variant="body2" sx={{ color: 'gray', p: 2, textAlign: 'center' }}>
+              <Typography variant="body2" sx={{ color: isDarkMode ? '#7C93B3' : 'gray', p: 2, textAlign: 'center' }}>
                 No devices found
               </Typography>
             )}
@@ -3073,9 +3029,6 @@ const PortNavigationApp = () => {
             )}
 
             {sidebarItems.length === 0 && searchType !== 'devices' && (
-              <Typography variant="body2" sx={{ color: 'gray', p: 2, textAlign: 'center' }}>
-            {sidebarItems.length === 0 && (
-              // <Typography variant="body2" sx={{ color: 'gray', p: 2, textAlign: 'center' }}>
               <Typography variant="body2" sx={{ color: isDarkMode ? '#7C93B3' : 'gray', p: 2, textAlign: 'center' }}>
                 No items found
               </Typography>
