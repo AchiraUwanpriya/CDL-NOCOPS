@@ -1328,6 +1328,7 @@ import {
   BatteryChargingFull,
 } from '@mui/icons-material';
 import Map from '../../../assets/images/blueprints/cdlplc.png';
+import MapDark from '../../../assets/images/blueprints/cdlplc_dark.png';
 import Serverroom from '../../../assets/locationType/serverroom.jpg';
 import { Building, Monitor, Wifi, WifiOff, HelpCircle } from 'lucide-react';
 import NetworkView from '../../../components/dashboards/locationInfo/NetworkView';
@@ -2760,8 +2761,16 @@ const PortNavigationApp = () => {
                     bgColor: 'rgba(76, 175, 80, 0.08)',
                     hoverBg: 'rgba(76, 175, 80, 0.16)',
                   };
+                }else if (status === 'other') {
+                  itemColors = {
+                    main: '#9ca3af',
+                    text: '#6b7280',
+                    bgColor: 'rgba(156, 163, 175, 0.08)',
+                    hoverBg: 'rgba(156, 163, 175, 0.16)',
+                  };
                 }
-              }
+                  }
+            
 
               const itemIcon = showSwitches ? (
                 <Storage sx={{ mr: 1, fontSize: 18, color: itemColors.main }} />
@@ -2852,7 +2861,7 @@ const PortNavigationApp = () => {
         <Box sx={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
           {/* Map Image */}
           <img
-            src={Map}
+            src={isDarkMode ? MapDark : Map}
             alt="Port Overview"
             style={{
               width: '100%',
