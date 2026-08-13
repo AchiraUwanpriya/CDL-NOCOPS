@@ -1328,7 +1328,7 @@ import {
   BatteryChargingFull,
 } from '@mui/icons-material';
 import Map from '../../../assets/images/blueprints/cdlplc.png';
-import MapDark from '../../../assets/images/blueprints/cdlplc_dark.png';
+import MapDark from '../../../assets/images/blueprints/cdplc_dark 2.png';
 import Serverroom from '../../../assets/locationType/serverroom.jpg';
 import { Building, Monitor, Wifi, WifiOff, HelpCircle } from 'lucide-react';
 import NetworkView from '../../../components/dashboards/locationInfo/NetworkView';
@@ -2629,7 +2629,7 @@ const PortNavigationApp = () => {
           width: '100%',
           height: '90vh',
           // backgroundColor: '#f4f4f4',
-          backgroundColor: isDarkMode ? '#0A0F1C' : '#f4f4f4',
+          backgroundColor: isDarkMode ? '#061527' : '#f4f4f4',
           overflow: 'hidden',
           display: 'flex',
           fontFamily: 'Arial, sans-serif',
@@ -2858,21 +2858,7 @@ const PortNavigationApp = () => {
         </Box>
 
         {/* Map View */}
-        <Box sx={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
-          {/* Map Image */}
-          <img
-            src={isDarkMode ? MapDark : Map}
-            alt="Port Overview"
-            style={{
-              width: '100%',
-              height: '100%',
-              objectFit: 'contain',
-              position: 'absolute',
-              top: 0,
-              left: 0,
-            }}
-          />
-
+        <Box sx={{ flex: 1, position: 'relative', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           {/* Map Tool Buttons */}
           <Box sx={{ position: 'absolute', top: 16, left: 16, zIndex: 40, display: 'flex', gap: 1 }}>
             <Tooltip title="Network Switch Map" arrow>
@@ -2964,6 +2950,30 @@ const PortNavigationApp = () => {
             </Tooltip>
           </Box>
 
+          {/* Inner Map Image Container matching EXACT visual image bounds */}
+          <Box
+            sx={{
+              position: 'relative',
+              display: 'inline-block',
+              maxWidth: '100%',
+              maxHeight: '100%',
+              lineHeight: 0,
+            }}
+          >
+            {/* Map Image */}
+            <img
+              src={isDarkMode ? MapDark : Map}
+              alt="Port Overview"
+              style={{
+                display: 'block',
+                maxWidth: '100%',
+                maxHeight: '90vh',
+                width: 'auto',
+                height: 'auto',
+                objectFit: 'contain',
+              }}
+            />
+
           {/* Water overlay */}
           <Box
             sx={{
@@ -2972,9 +2982,11 @@ const PortNavigationApp = () => {
               left: 0,
               right: 0,
               bottom: 0,
-              // background: 'linear-gradient(135deg, #1976d2 0%, #42a5f5 50%, #1976d2 100%)',
-              background: isDarkMode ? 'linear-gradient(135deg, #0B4A63 0%, #29B6F6 50%, #0B4A63 100%)' : 'linear-gradient(135deg, #1976d2 0%, #42a5f5 50%, #1976d2 100%)',
+              background: isDarkMode
+                ? 'linear-gradient(135deg, #0B4A63 0%, #29B6F6 50%, #0B4A63 100%)'
+                : 'linear-gradient(135deg, #1976d2 0%, #42a5f5 50%, #1976d2 100%)',
               opacity: 0.15,
+              pointerEvents: 'none',
             }}
           />
 
@@ -3518,6 +3530,7 @@ const PortNavigationApp = () => {
               </svg>
             );
           })()}
+          </Box>
         </Box>
 
         {/* Network Diagram Dialog */}
