@@ -1328,6 +1328,7 @@ import {
   BatteryChargingFull,
 } from '@mui/icons-material';
 import Map from '../../../assets/images/blueprints/cdlplc.png';
+import MapDark from '../../../assets/images/blueprints/cdlplc_dark.png';
 import Serverroom from '../../../assets/locationType/serverroom.jpg';
 import { Building, Monitor, Wifi, WifiOff, HelpCircle } from 'lucide-react';
 import NetworkView from '../../../components/dashboards/locationInfo/NetworkView';
@@ -1756,7 +1757,9 @@ const PortNavigationApp = () => {
 
         let status = 'unknown';
         if (bTotal > 0) {
-          if (bActive === 0) {
+          if (bActive === 0 && bDown === 0) {
+            status = 'other';
+          } else if (bActive === 0) {
             status = 'down'; 
           } else if (bActive > 0 && bDown > 0) {
             status = 'partial'; 
@@ -1870,7 +1873,9 @@ const PortNavigationApp = () => {
 
         let status = 'unknown';
         if (bTotal > 0) {
-          if (bActive === 0) {
+          if (bActive === 0 && bDown === 0) {
+            status = 'other';
+          } else if (bActive === 0) {
             status = 'down'; 
           } else if (bActive > 0 && bDown > 0) {
             status = 'partial';
@@ -1938,6 +1943,7 @@ const PortNavigationApp = () => {
    * - 'down'    → red    (#f44336) - all devices inactive
    * - 'partial' → yellow (#f59e0b) - active & inactive both devices
    * - 'up'      → green  (#4caf50) - all devices active
+   * - 'other'   → gray   (#9ca3af) - only other devices
    * - 'loading' → blue (default)
    */
   const getDockPingColor = (dockId, isSelected, isHovered) => {
@@ -1948,6 +1954,7 @@ const PortNavigationApp = () => {
     if (status === 'down') return '#f44336';
     if (status === 'partial') return '#f59e0b';
     if (status === 'up') return '#4caf50';
+    if (status === 'other') return '#9ca3af';
     // return '#1976d2'; // default blue (loading)
     return isDarkMode ? '#29B6F6' : '#1976d2'; // default blue (loading)
   };
@@ -1966,7 +1973,8 @@ const PortNavigationApp = () => {
 
   /**
    * Returns background, border, hover shadow, and icon gradient for floor/sector cards:
-   * - no active devices -> Red
+   * - 0 active & 0 inactive (only other devices) -> Gray
+   * - no active devices (and inactive > 0) -> Red
    * - active & inactive both -> Yellow
    * - active devices present & 0 inactive devices -> Green (includes active + other devices)
    */
@@ -1979,6 +1987,17 @@ const PortNavigationApp = () => {
         hoverShadow: '0 4px 12px rgba(0,0,0,0.3)',
         // iconGradient: 'linear-gradient(to right, #3b82f6, #8b5cf6)',
         iconGradient: isDarkMode ? 'linear-gradient(to right, #29B6F6, #22D3EE)' : 'linear-gradient(to right, #3b82f6, #8b5cf6)',
+      };
+    }
+
+    if (activeCount === 0 && downCount === 0) {
+      // Gray: Only 'other' devices present (0 active, 0 inactive, >0 other)
+      return {
+        bg: 'rgba(156, 163, 175, 0.08)',
+        hoverBg: 'rgba(156, 163, 175, 0.14)',
+        border: '1px solid rgba(156, 163, 175, 0.4)',
+        hoverShadow: '0 0 12px rgba(156, 163, 175, 0.4)',
+        iconGradient: 'linear-gradient(to right, #9ca3af, #6b7280)',
       };
     }
 
@@ -2926,6 +2945,16 @@ const PortNavigationApp = () => {
                     };
                   }
                 }
+                }else if (status === 'other') {
+                  itemColors = {
+                    main: '#9ca3af',
+                    text: '#6b7280',
+                    bgColor: 'rgba(156, 163, 175, 0.08)',
+                    hoverBg: 'rgba(156, 163, 175, 0.16)',
+                  };
+                }
+                  }
+            
 
                 const itemIcon = showSwitches ? (
                   <Storage sx={{ mr: 1, fontSize: 18, color: itemColors.main }} />
@@ -3040,7 +3069,7 @@ const PortNavigationApp = () => {
         <Box sx={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
           {/* Map Image */}
           <img
-            src={Map}
+            src={isDarkMode ? MapDark : Map}
             alt="Port Overview"
             style={{
               width: '100%',
