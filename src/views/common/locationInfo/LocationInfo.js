@@ -3282,7 +3282,16 @@ const PortNavigationApp = () => {
         </Box>
 
         {/* Map View */}
-        <Box sx={{ flex: 1, position: 'relative', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <Box
+          sx={{
+            flex: 1,
+            position: 'relative',
+            overflow: 'hidden',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
           {/* Map Tool Buttons */}
           <Box
             sx={{ position: 'absolute', top: 16, left: 16, zIndex: 40, display: 'flex', gap: 1 }}
@@ -3434,146 +3443,146 @@ const PortNavigationApp = () => {
               }}
             />
 
-          {/* Water overlay */}
-          <Box
-            sx={{
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              // background: 'linear-gradient(135deg, #1976d2 0%, #42a5f5 50%, #1976d2 100%)',
-              background: isDarkMode
-                ? 'linear-gradient(135deg, #0B4A63 0%, #29B6F6 50%, #0B4A63 100%)'
-                : 'linear-gradient(135deg, #1976d2 0%, #42a5f5 50%, #1976d2 100%)',
-              opacity: 0.15,
-              pointerEvents: 'none',
-            }}
-          />
+            {/* Water overlay */}
+            <Box
+              sx={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                // background: 'linear-gradient(135deg, #1976d2 0%, #42a5f5 50%, #1976d2 100%)',
+                background: isDarkMode
+                  ? 'linear-gradient(135deg, #0B4A63 0%, #29B6F6 50%, #0B4A63 100%)'
+                  : 'linear-gradient(135deg, #1976d2 0%, #42a5f5 50%, #1976d2 100%)',
+                opacity: 0.15,
+                pointerEvents: 'none',
+              }}
+            />
 
-          {/* Building Markers */}
-          {!showSwitches && !showPrinters && !showUps && (
-            <>
-              {docks.map((dock) => {
-                const isSelected = selectedDock?.id === dock.id;
-                const isHovered = hoveredDock === dock.id;
-                const stats = getDockStats(dock.id);
-                const inactiveCount = stats.downCount; // only genuinely offline devices (excludes shutdown & untracked)
+            {/* Building Markers */}
+            {!showSwitches && !showPrinters && !showUps && (
+              <>
+                {docks.map((dock) => {
+                  const isSelected = selectedDock?.id === dock.id;
+                  const isHovered = hoveredDock === dock.id;
+                  const stats = getDockStats(dock.id);
+                  const inactiveCount = stats.downCount; // only genuinely offline devices (excludes shutdown & untracked)
 
-                return (
-                  <Box
-                    key={dock.id}
-                    sx={{
-                      position: 'absolute',
-                      left: dock.x,
-                      top: dock.y,
-                      transform: 'translate(-50%, -50%)',
-                      zIndex: isSelected
-                        ? 40
-                        : locationPingStatus[dock.id] === 'down' ||
-                          locationPingStatus[dock.id] === 'partial'
-                        ? 30
-                        : 10,
-                      display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'center',
-                    }}
-                  >
-                    {/* Always visible inactive devices count tooltip */}
-                    {stats.totalCount > 0 && inactiveCount > 0 && (
-                      <Box
-                        sx={{
-                          position: 'absolute',
-                          bottom: isSelected ? '44px' : '34px', // Floats up dynamically when selected
-                          // backgroundColor: '#1e293b',
-                          backgroundColor: isDarkMode ? '#101B2D' : '#1e293b',
-                          color: '#ffffff',
-                          border: '1px solid rgba(255,255,255,0.2)',
-                          borderRadius: '6px',
-                          px: 1.0,
-                          py: 0.3,
-                          fontSize: '11px',
-                          fontWeight: 'bold',
-                          boxShadow: '0 2px 8px rgba(0,0,0,0.5)',
-                          whiteSpace: 'nowrap',
-                          pointerEvents: 'none',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '6px',
-                          transition: 'all 0.3s ease',
-                          zIndex:
-                            locationPingStatus[dock.id] === 'down' ||
+                  return (
+                    <Box
+                      key={dock.id}
+                      sx={{
+                        position: 'absolute',
+                        left: dock.x,
+                        top: dock.y,
+                        transform: 'translate(-50%, -50%)',
+                        zIndex: isSelected
+                          ? 40
+                          : locationPingStatus[dock.id] === 'down' ||
                             locationPingStatus[dock.id] === 'partial'
-                              ? 50
-                              : 25,
-                          '&::after': {
-                            content: '""',
+                          ? 30
+                          : 10,
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                      }}
+                    >
+                      {/* Always visible inactive devices count tooltip */}
+                      {stats.totalCount > 0 && inactiveCount > 0 && (
+                        <Box
+                          sx={{
                             position: 'absolute',
-                            top: '100%',
-                            left: '50%',
-                            transform: 'translateX(-50%)',
-                            borderWidth: '4px',
-                            borderStyle: 'solid',
-                            borderColor: '#1e293b transparent transparent transparent',
-                          },
-                        }}
-                      >
-                        {stats.activeCount === 0 ? (
-                          <WifiOff size={13} color="#ef4444" />
-                        ) : stats.activeCount < stats.totalCount ? (
-                          <WifiOff size={13} color="#f59e0b" />
-                        ) : (
-                          <Wifi size={13} color="#4ade80" />
-                        )}
-                        <span>
-                          {inactiveCount} / {stats.totalCount}
-                        </span>
-                      </Box>
-                    )}
-
-                    {/* Hover tooltip for full building stats */}
-                    <Tooltip
-                      title={
-                        <Box sx={{ p: 1 }}>
-                          <Typography
-                            variant="subtitle2"
-                            fontWeight="bold"
-                            sx={{ color: '#fff', mb: 0.5 }}
-                          >
-                            {dock.name}
-                          </Typography>
-                          {dock.description && (
-                            <Typography variant="body2" sx={{ color: '#ccc', mb: 1 }}>
-                              {dock.description}
-                            </Typography>
+                            bottom: isSelected ? '44px' : '34px', // Floats up dynamically when selected
+                            // backgroundColor: '#1e293b',
+                            backgroundColor: isDarkMode ? '#101B2D' : '#1e293b',
+                            color: '#ffffff',
+                            border: '1px solid rgba(255,255,255,0.2)',
+                            borderRadius: '6px',
+                            px: 1.0,
+                            py: 0.3,
+                            fontSize: '11px',
+                            fontWeight: 'bold',
+                            boxShadow: '0 2px 8px rgba(0,0,0,0.5)',
+                            whiteSpace: 'nowrap',
+                            pointerEvents: 'none',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            transition: 'all 0.3s ease',
+                            zIndex:
+                              locationPingStatus[dock.id] === 'down' ||
+                              locationPingStatus[dock.id] === 'partial'
+                                ? 50
+                                : 25,
+                            '&::after': {
+                              content: '""',
+                              position: 'absolute',
+                              top: '100%',
+                              left: '50%',
+                              transform: 'translateX(-50%)',
+                              borderWidth: '4px',
+                              borderStyle: 'solid',
+                              borderColor: '#1e293b transparent transparent transparent',
+                            },
+                          }}
+                        >
+                          {stats.activeCount === 0 ? (
+                            <WifiOff size={13} color="#ef4444" />
+                          ) : stats.activeCount < stats.totalCount ? (
+                            <WifiOff size={13} color="#f59e0b" />
+                          ) : (
+                            <Wifi size={13} color="#4ade80" />
                           )}
-                          <Typography variant="body2" sx={{ color: '#fff', mb: 0.5 }}>
-                            Total Devices: {stats.totalCount}
-                          </Typography>
-                          <Typography variant="body2" sx={{ color: '#4ade80', mb: 0.5 }}>
-                            Active: {stats.activeCount}
-                          </Typography>
-                          <Typography variant="body2" sx={{ color: '#ef4444', mb: 0.5 }}>
-                            Inactive: {inactiveCount}
-                          </Typography>
-                          <Tooltip
-                            title={renderOtherBreakdownTooltip(stats.otherBreakdown)}
-                            arrow
-                            placement="right"
-                          >
+                          <span>
+                            {inactiveCount} / {stats.totalCount}
+                          </span>
+                        </Box>
+                      )}
+
+                      {/* Hover tooltip for full building stats */}
+                      <Tooltip
+                        title={
+                          <Box sx={{ p: 1 }}>
                             <Typography
-                              variant="body2"
-                              sx={{
-                                color: '#9ca3af',
-                                mb: 0.5,
-                                cursor: 'pointer',
-                                '&:hover': { textDecoration: 'underline' },
-                              }}
+                              variant="subtitle2"
+                              fontWeight="bold"
+                              sx={{ color: '#fff', mb: 0.5 }}
                             >
-                              Other: {stats.otherCount}
+                              {dock.name}
                             </Typography>
-                          </Tooltip>
-                          {/* <Typography
+                            {dock.description && (
+                              <Typography variant="body2" sx={{ color: '#ccc', mb: 1 }}>
+                                {dock.description}
+                              </Typography>
+                            )}
+                            <Typography variant="body2" sx={{ color: '#fff', mb: 0.5 }}>
+                              Total Devices: {stats.totalCount}
+                            </Typography>
+                            <Typography variant="body2" sx={{ color: '#4ade80', mb: 0.5 }}>
+                              Active: {stats.activeCount}
+                            </Typography>
+                            <Typography variant="body2" sx={{ color: '#ef4444', mb: 0.5 }}>
+                              Inactive: {inactiveCount}
+                            </Typography>
+                            <Tooltip
+                              title={renderOtherBreakdownTooltip(stats.otherBreakdown)}
+                              arrow
+                              placement="right"
+                            >
+                              <Typography
+                                variant="body2"
+                                sx={{
+                                  color: '#9ca3af',
+                                  mb: 0.5,
+                                  cursor: 'pointer',
+                                  '&:hover': { textDecoration: 'underline' },
+                                }}
+                              >
+                                Other: {stats.otherCount}
+                              </Typography>
+                            </Tooltip>
+                            {/* <Typography
                             variant="body2"
                             sx={{
                               color:
@@ -3595,6 +3604,98 @@ const PortNavigationApp = () => {
                               ? '⏳ Checking...'
                               : '⚪ No Data'}
                           </Typography> */}
+                          </Box>
+                        }
+                        arrow
+                        placement="top"
+                      >
+                        <Fab
+                          size="small"
+                          onClick={() => handleDockClick(dock)}
+                          onMouseEnter={() => setHoveredDock(dock.id)}
+                          onMouseLeave={() => setHoveredDock(null)}
+                          sx={{
+                            color: '#fff',
+                            backgroundColor: getDockPingColor(dock.id, isSelected, isHovered),
+                            transform: isSelected
+                              ? 'scale(1.4)'
+                              : isHovered
+                              ? 'scale(1.2)'
+                              : 'scale(1)',
+                            boxShadow: isHovered
+                              ? '0 0 12px 14px rgba(25, 118, 210, 0.4)'
+                              : isSelected
+                              ? '0 4px 16px rgba(0,0,0,0.4)'
+                              : locationPingStatus[dock.id] === 'down'
+                              ? '0 0 8px 4px rgba(244, 67, 54, 0.5)'
+                              : locationPingStatus[dock.id] === 'partial'
+                              ? '0 0 8px 4px rgba(245, 158, 11, 0.5)'
+                              : '0 2px 8px rgba(0,0,0,0.3)',
+                            transition: 'all 0.3s ease',
+                            cursor: 'pointer',
+                            '@keyframes pulseRed': {
+                              '0%': {
+                                boxShadow: '0 0 0 0 rgba(244, 67, 54, 0.7)',
+                              },
+                              '70%': {
+                                boxShadow: '0 0 0 10px rgba(244, 67, 54, 0)',
+                              },
+                              '100%': {
+                                boxShadow: '0 0 0 0 rgba(244, 67, 54, 0)',
+                              },
+                            },
+                            '@keyframes pulseYellow': {
+                              '0%': {
+                                boxShadow: '0 0 0 0 rgba(245, 158, 11, 0.7)',
+                              },
+                              '70%': {
+                                boxShadow: '0 0 0 10px rgba(245, 158, 11, 0)',
+                              },
+                              '100%': {
+                                boxShadow: '0 0 0 0 rgba(245, 158, 11, 0)',
+                              },
+                            },
+                            '@keyframes pulseGreen': {
+                              '0%': {
+                                boxShadow: '0 0 0 0 rgba(76, 175, 80, 0.7)',
+                              },
+                              '70%': {
+                                boxShadow: '0 0 0 10px rgba(76, 175, 80, 0)',
+                              },
+                              '100%': {
+                                boxShadow: '0 0 0 0 rgba(76, 175, 80, 0)',
+                              },
+                            },
+                            animation: getDockAnimation(dock.id, isSelected, isHovered),
+                            '&:hover': {
+                              // backgroundColor: '#1565c0',
+                              backgroundColor: isDarkMode ? '#0B84A8' : '#1565c0',
+                            },
+                          }}
+                        >
+                          <LocationOn />
+                        </Fab>
+                      </Tooltip>
+                    </Box>
+                  );
+                })}
+              </>
+            )}
+
+            {/* Switch Markers */}
+            {showSwitches && (
+              <>
+                {dockswitches.map((switchItem) => {
+                  const isHovered = hoveredSwitch === switchItem.id;
+
+                  return (
+                    <Tooltip
+                      key={switchItem.id}
+                      title={
+                        <Box>
+                          <Typography variant="subtitle2" fontWeight="bold">
+                            {switchItem.name}
+                          </Typography>
                         </Box>
                       }
                       arrow
@@ -3602,427 +3703,335 @@ const PortNavigationApp = () => {
                     >
                       <Fab
                         size="small"
-                        onClick={() => handleDockClick(dock)}
-                        onMouseEnter={() => setHoveredDock(dock.id)}
-                        onMouseLeave={() => setHoveredDock(null)}
+                        onClick={() => console.log('Switch clicked:', switchItem.name)}
+                        onMouseEnter={() => setHoveredSwitch(switchItem.id)}
+                        onMouseLeave={() => setHoveredSwitch(null)}
                         sx={{
                           color: '#fff',
-                          backgroundColor: getDockPingColor(dock.id, isSelected, isHovered),
-                          transform: isSelected
-                            ? 'scale(1.4)'
-                            : isHovered
-                            ? 'scale(1.2)'
-                            : 'scale(1)',
+                          backgroundColor: isHovered ? '#f44336' : '#4caf50',
+                          position: 'absolute',
+                          left: switchItem.x,
+                          top: switchItem.y,
+                          transform: isHovered
+                            ? 'translate(-50%, -50%) scale(1.4)'
+                            : 'translate(-50%, -50%) scale(1)',
+                          zIndex: 15,
                           boxShadow: isHovered
-                            ? '0 0 12px 14px rgba(25, 118, 210, 0.4)'
-                            : isSelected
-                            ? '0 4px 16px rgba(0,0,0,0.4)'
-                            : locationPingStatus[dock.id] === 'down'
-                            ? '0 0 8px 4px rgba(244, 67, 54, 0.5)'
-                            : locationPingStatus[dock.id] === 'partial'
-                            ? '0 0 8px 4px rgba(245, 158, 11, 0.5)'
+                            ? '0 0 12px 14px rgba(244, 67, 54, 0.6)'
                             : '0 2px 8px rgba(0,0,0,0.3)',
                           transition: 'all 0.3s ease',
                           cursor: 'pointer',
-                          '@keyframes pulseRed': {
-                            '0%': {
-                              boxShadow: '0 0 0 0 rgba(244, 67, 54, 0.7)',
-                            },
-                            '70%': {
-                              boxShadow: '0 0 0 10px rgba(244, 67, 54, 0)',
-                            },
-                            '100%': {
-                              boxShadow: '0 0 0 0 rgba(244, 67, 54, 0)',
-                            },
-                          },
-                          '@keyframes pulseYellow': {
-                            '0%': {
-                              boxShadow: '0 0 0 0 rgba(245, 158, 11, 0.7)',
-                            },
-                            '70%': {
-                              boxShadow: '0 0 0 10px rgba(245, 158, 11, 0)',
-                            },
-                            '100%': {
-                              boxShadow: '0 0 0 0 rgba(245, 158, 11, 0)',
-                            },
-                          },
-                          '@keyframes pulseGreen': {
-                            '0%': {
-                              boxShadow: '0 0 0 0 rgba(76, 175, 80, 0.7)',
-                            },
-                            '70%': {
-                              boxShadow: '0 0 0 10px rgba(76, 175, 80, 0)',
-                            },
-                            '100%': {
-                              boxShadow: '0 0 0 0 rgba(76, 175, 80, 0)',
-                            },
-                          },
-                          animation: getDockAnimation(dock.id, isSelected, isHovered),
                           '&:hover': {
-                            // backgroundColor: '#1565c0',
-                            backgroundColor: isDarkMode ? '#0B84A8' : '#1565c0',
+                            transform: 'translate(-50%, -50%) scale(1.4)',
+                            backgroundColor: '#f44336',
+                            boxShadow: '0 0 12px 14px rgba(244, 67, 54, 0.6)',
                           },
                         }}
                       >
-                        <LocationOn />
+                        <Storage />
                       </Fab>
                     </Tooltip>
-                  </Box>
-                );
-              })}
-            </>
-          )}
+                  );
+                })}
+              </>
+            )}
 
-          {/* Switch Markers */}
-          {showSwitches && (
-            <>
-              {dockswitches.map((switchItem) => {
-                const isHovered = hoveredSwitch === switchItem.id;
+            {/* Printer Markers */}
+            {showPrinters && (
+              <>
+                {printers.map((printer) => {
+                  const isHovered = hoveredPrinter === printer.id;
 
-                return (
-                  <Tooltip
-                    key={switchItem.id}
-                    title={
-                      <Box>
-                        <Typography variant="subtitle2" fontWeight="bold">
-                          {switchItem.name}
-                        </Typography>
-                      </Box>
-                    }
-                    arrow
-                    placement="top"
-                  >
-                    <Fab
-                      size="small"
-                      onClick={() => console.log('Switch clicked:', switchItem.name)}
-                      onMouseEnter={() => setHoveredSwitch(switchItem.id)}
-                      onMouseLeave={() => setHoveredSwitch(null)}
-                      sx={{
-                        color: '#fff',
-                        backgroundColor: isHovered ? '#f44336' : '#4caf50',
-                        position: 'absolute',
-                        left: switchItem.x,
-                        top: switchItem.y,
-                        transform: isHovered
-                          ? 'translate(-50%, -50%) scale(1.4)'
-                          : 'translate(-50%, -50%) scale(1)',
-                        zIndex: 15,
-                        boxShadow: isHovered
-                          ? '0 0 12px 14px rgba(244, 67, 54, 0.6)'
-                          : '0 2px 8px rgba(0,0,0,0.3)',
-                        transition: 'all 0.3s ease',
-                        cursor: 'pointer',
-                        '&:hover': {
-                          transform: 'translate(-50%, -50%) scale(1.4)',
-                          backgroundColor: '#f44336',
-                          boxShadow: '0 0 12px 14px rgba(244, 67, 54, 0.6)',
-                        },
-                      }}
+                  return (
+                    <Tooltip
+                      key={printer.id}
+                      title={
+                        <Box>
+                          <Typography variant="subtitle2" fontWeight="bold">
+                            {printer.name}
+                          </Typography>
+                          {printer.description && (
+                            <Typography variant="body2">{printer.description}</Typography>
+                          )}
+                        </Box>
+                      }
+                      arrow
+                      placement="top"
                     >
-                      <Storage />
-                    </Fab>
-                  </Tooltip>
-                );
-              })}
-            </>
-          )}
-
-          {/* Printer Markers */}
-          {showPrinters && (
-            <>
-              {printers.map((printer) => {
-                const isHovered = hoveredPrinter === printer.id;
-
-                return (
-                  <Tooltip
-                    key={printer.id}
-                    title={
-                      <Box>
-                        <Typography variant="subtitle2" fontWeight="bold">
-                          {printer.name}
-                        </Typography>
-                        {printer.description && (
-                          <Typography variant="body2">{printer.description}</Typography>
-                        )}
-                      </Box>
-                    }
-                    arrow
-                    placement="top"
-                  >
-                    <Fab
-                      size="small"
-                      onClick={() => console.log('Printer clicked:', printer.name)}
-                      onMouseEnter={() => setHoveredPrinter(printer.id)}
-                      onMouseLeave={() => setHoveredPrinter(null)}
-                      sx={{
-                        color: '#fff',
-                        // backgroundColor: isHovered ? '#f44336' : '#1976d2',
-                        backgroundColor: isHovered ? '#f44336' : isDarkMode ? '#29B6F6' : '#1976d2',
-                        position: 'absolute',
-                        left: printer.x,
-                        top: printer.y,
-                        transform: isHovered
-                          ? 'translate(-50%, -50%) scale(1.4)'
-                          : 'translate(-50%, -50%) scale(1)',
-                        zIndex: 15,
-                        boxShadow: isHovered
-                          ? '0 0 12px 14px rgba(244, 67, 54, 0.6)'
-                          : '0 2px 8px rgba(0,0,0,0.3)',
-                        transition: 'all 0.3s ease',
-                        cursor: 'pointer',
-                        '&:hover': {
-                          transform: 'translate(-50%, -50%) scale(1.4)',
-                          backgroundColor: '#f44336',
-                          boxShadow: '0 0 12px 14px rgba(244, 67, 54, 0.6)',
-                        },
-                      }}
-                    >
-                      <Print />
-                    </Fab>
-                  </Tooltip>
-                );
-              })}
-            </>
-          )}
-
-          {/* UPS Markers */}
-          {showUps && (
-            <>
-              {ups.map((upsItem) => {
-                const isHovered = hoveredUps === upsItem.id;
-
-                return (
-                  <Tooltip
-                    key={upsItem.id}
-                    title={
-                      <Box>
-                        <Typography variant="subtitle2" fontWeight="bold">
-                          {upsItem.name}
-                        </Typography>
-                        {upsItem.description && (
-                          <Typography variant="body2">{upsItem.description}</Typography>
-                        )}
-                      </Box>
-                    }
-                    arrow
-                    placement="top"
-                  >
-                    <Fab
-                      size="small"
-                      onClick={() => console.log('UPS clicked:', upsItem.name)}
-                      onMouseEnter={() => setHoveredUps(upsItem.id)}
-                      onMouseLeave={() => setHoveredUps(null)}
-                      sx={{
-                        color: '#fff',
-                        backgroundColor: isHovered ? '#f0857d' : '#f09245',
-                        position: 'absolute',
-                        left: upsItem.x,
-                        top: upsItem.y,
-                        transform: isHovered
-                          ? 'translate(-50%, -50%) scale(1.4)'
-                          : 'translate(-50%, -50%) scale(1)',
-                        zIndex: 15,
-                        boxShadow: isHovered
-                          ? '0 0 12px 14px rgba(244, 67, 54, 0.6)'
-                          : '0 2px 8px rgba(0,0,0,0.3)',
-                        transition: 'all 0.3s ease',
-                        cursor: 'pointer',
-                        '&:hover': {
-                          transform: 'translate(-50%, -50%) scale(1.4)',
-                          backgroundColor: '#f44336',
-                          boxShadow: '0 0 12px 14px rgba(244, 67, 54, 0.6)',
-                        },
-                      }}
-                    >
-                      {/* <BatteryChargingFull /> */}
-                      <img
-                        src={UpsIcon}
-                        alt="UPS"
-                        style={{
-                          width: 20,
-                          height: 20,
-                          filter: showUps ? 'none' : 'grayscale(100%)',
+                      <Fab
+                        size="small"
+                        onClick={() => console.log('Printer clicked:', printer.name)}
+                        onMouseEnter={() => setHoveredPrinter(printer.id)}
+                        onMouseLeave={() => setHoveredPrinter(null)}
+                        sx={{
+                          color: '#fff',
+                          // backgroundColor: isHovered ? '#f44336' : '#1976d2',
+                          backgroundColor: isHovered
+                            ? '#f44336'
+                            : isDarkMode
+                            ? '#29B6F6'
+                            : '#1976d2',
+                          position: 'absolute',
+                          left: printer.x,
+                          top: printer.y,
+                          transform: isHovered
+                            ? 'translate(-50%, -50%) scale(1.4)'
+                            : 'translate(-50%, -50%) scale(1)',
+                          zIndex: 15,
+                          boxShadow: isHovered
+                            ? '0 0 12px 14px rgba(244, 67, 54, 0.6)'
+                            : '0 2px 8px rgba(0,0,0,0.3)',
+                          transition: 'all 0.3s ease',
+                          cursor: 'pointer',
+                          '&:hover': {
+                            transform: 'translate(-50%, -50%) scale(1.4)',
+                            backgroundColor: '#f44336',
+                            boxShadow: '0 0 12px 14px rgba(244, 67, 54, 0.6)',
+                          },
                         }}
-                      />
-                    </Fab>
-                  </Tooltip>
-                );
-              })}
-            </>
-          )}
+                      >
+                        <Print />
+                      </Fab>
+                    </Tooltip>
+                  );
+                })}
+              </>
+            )}
 
-          {/* Server Room Marker (always shown) */}
-          {staticServers.map((server) => (
-            <Tooltip key={server.id} title={server.name} arrow placement="top">
-              <Fab
-                size="small"
-                onClick={() => console.log('Server clicked:', server.name)}
-                sx={{
-                  color: '#fff',
-                  backgroundColor: '#4caf50',
-                  position: 'absolute',
-                  left: server.left,
-                  top: server.top,
-                  transform: 'translate(-50%, -50%)',
-                  zIndex: 25,
-                  boxShadow: '0 2px 10px rgba(0,0,0,0.3)',
-                  cursor: 'pointer',
-                  '&:hover': {
-                    transform: 'translate(-50%, -50%) scale(1.2)',
-                    boxShadow: '0 0 12px rgba(0,0,0,0.5)',
-                  },
-                }}
-              >
-                <img
-                  src={Serverroom}
-                  alt="Server Room"
-                  style={{ width: 40, height: 40, borderRadius: 50 }}
-                />
-              </Fab>
-            </Tooltip>
-          ))}
+            {/* UPS Markers */}
+            {showUps && (
+              <>
+                {ups.map((upsItem) => {
+                  const isHovered = hoveredUps === upsItem.id;
 
-          {/* Selected item info */}
-          {selectedDock && !showSwitches && !showPrinters && !showUps && (
-            <Box
-              sx={{
-                position: 'absolute',
-                top: 20,
-                right: 20,
-                // backgroundColor: 'rgba(255,255,255,0.9)',
-                backgroundColor: isDarkMode ? 'rgba(13,21,38,0.92)' : 'rgba(255,255,255,0.9)',
-                border: isDarkMode ? '1px solid #1B2A44' : 'none',
-                borderRadius: 2,
-                boxShadow: 3,
-                p: 2,
-                maxWidth: 240,
-                zIndex: 30,
-              }}
-            >
-              <Typography
-                variant="subtitle1"
-                fontWeight="bold"
-                sx={{
-                  color:
-                    locationPingStatus[selectedDock.id] === 'down'
-                      ? '#d32f2f'
-                      : locationPingStatus[selectedDock.id] === 'partial'
-                      ? '#b45309'
-                      : locationPingStatus[selectedDock.id] === 'up'
-                      ? '#2e7d32'
-                      : // : '#1976d2',
-                      isDarkMode
-                      ? '#29B6F6'
-                      : '#1976d2',
-                }}
-              >
-                {selectedDock.name}
-              </Typography>
-            </Box>
-          )}
+                  return (
+                    <Tooltip
+                      key={upsItem.id}
+                      title={
+                        <Box>
+                          <Typography variant="subtitle2" fontWeight="bold">
+                            {upsItem.name}
+                          </Typography>
+                          {upsItem.description && (
+                            <Typography variant="body2">{upsItem.description}</Typography>
+                          )}
+                        </Box>
+                      }
+                      arrow
+                      placement="top"
+                    >
+                      <Fab
+                        size="small"
+                        onClick={() => console.log('UPS clicked:', upsItem.name)}
+                        onMouseEnter={() => setHoveredUps(upsItem.id)}
+                        onMouseLeave={() => setHoveredUps(null)}
+                        sx={{
+                          color: '#fff',
+                          backgroundColor: isHovered ? '#f0857d' : '#f09245',
+                          position: 'absolute',
+                          left: upsItem.x,
+                          top: upsItem.y,
+                          transform: isHovered
+                            ? 'translate(-50%, -50%) scale(1.4)'
+                            : 'translate(-50%, -50%) scale(1)',
+                          zIndex: 15,
+                          boxShadow: isHovered
+                            ? '0 0 12px 14px rgba(244, 67, 54, 0.6)'
+                            : '0 2px 8px rgba(0,0,0,0.3)',
+                          transition: 'all 0.3s ease',
+                          cursor: 'pointer',
+                          '&:hover': {
+                            transform: 'translate(-50%, -50%) scale(1.4)',
+                            backgroundColor: '#f44336',
+                            boxShadow: '0 0 12px 14px rgba(244, 67, 54, 0.6)',
+                          },
+                        }}
+                      >
+                        {/* <BatteryChargingFull /> */}
+                        <img
+                          src={UpsIcon}
+                          alt="UPS"
+                          style={{
+                            width: 20,
+                            height: 20,
+                            filter: showUps ? 'none' : 'grayscale(100%)',
+                          }}
+                        />
+                      </Fab>
+                    </Tooltip>
+                  );
+                })}
+              </>
+            )}
 
-          {/* Connection Line - DTS to Server Room */}
-          {!showSwitches &&
-            !showPrinters &&
-            !showUps &&
-            (() => {
-              const dtsDock = docks.find((d) => d.id === 'DTS');
-              const mainServer = staticServers.find((s) => s.id === 'server1');
-
-              if (!dtsDock || !mainServer) return null;
-
-              // Convert percentage strings to numbers for calculation
-              const parsePercentage = (str) => parseFloat(str) / 100;
-
-              const x1 = parsePercentage(dtsDock.x);
-              const y1 = parsePercentage(dtsDock.y);
-              const x2 = parsePercentage(mainServer.left);
-              const y2 = parsePercentage(mainServer.top);
-
-              return (
-                <svg
-                  style={{
+            {/* Server Room Marker (always shown) */}
+            {staticServers.map((server) => (
+              <Tooltip key={server.id} title={server.name} arrow placement="top">
+                <Fab
+                  size="small"
+                  onClick={() => console.log('Server clicked:', server.name)}
+                  sx={{
+                    color: '#fff',
+                    backgroundColor: '#4caf50',
                     position: 'absolute',
-                    width: '100%',
-                    height: '100%',
-                    top: 0,
-                    left: 0,
-                    pointerEvents: 'none',
-                    zIndex: 22,
+                    left: server.left,
+                    top: server.top,
+                    transform: 'translate(-50%, -50%)',
+                    zIndex: 25,
+                    boxShadow: '0 2px 10px rgba(0,0,0,0.3)',
+                    cursor: 'pointer',
+                    '&:hover': {
+                      transform: 'translate(-50%, -50%) scale(1.2)',
+                      boxShadow: '0 0 12px rgba(0,0,0,0.5)',
+                    },
                   }}
                 >
-                  <defs>
-                    <filter id="glow">
-                      <feGaussianBlur stdDeviation="2" result="coloredBlur" />
-                      <feMerge>
-                        <feMergeNode in="coloredBlur" />
-                        <feMergeNode in="SourceGraphic" />
-                      </feMerge>
-                    </filter>
-
-                    <marker
-                      id="arrowhead"
-                      markerWidth="10"
-                      markerHeight="10"
-                      refX="9"
-                      refY="5"
-                      orient="auto"
-                    >
-                      <path d="M2,2 L8,5 L2,8 Z" fill="#1976d2" />
-                    </marker>
-                  </defs>
-
-                  {/* Glow effect line */}
-                  <line
-                    x1={`${x1 * 100}%`}
-                    y1={`${y1 * 100}%`}
-                    x2={`${x2 * 100}%`}
-                    y2={`${y2 * 100}%`}
-                    // stroke="#2196f3"
-                    stroke={isDarkMode ? '#29B6F6' : '#2196f3'}
-                    strokeWidth="4"
-                    strokeDasharray="8,8"
-                    filter="url(#glow)"
-                    opacity="0.6"
+                  <img
+                    src={Serverroom}
+                    alt="Server Room"
+                    style={{ width: 40, height: 40, borderRadius: 50 }}
                   />
+                </Fab>
+              </Tooltip>
+            ))}
 
-                  {/* Main dotted line */}
-                  <line
-                    x1={`${x1 * 100}%`}
-                    y1={`${y1 * 100}%`}
-                    x2={`${x2 * 100}%`}
-                    y2={`${y2 * 100}%`}
-                    stroke="#1976d2"
-                    strokeWidth="2.5"
-                    strokeDasharray="6,6"
-                    markerEnd="url(#arrowhead)"
-                  />
+            {/* Selected item info */}
+            {selectedDock && !showSwitches && !showPrinters && !showUps && (
+              <Box
+                sx={{
+                  position: 'absolute',
+                  top: 20,
+                  right: 20,
+                  // backgroundColor: 'rgba(255,255,255,0.9)',
+                  backgroundColor: isDarkMode ? 'rgba(13,21,38,0.92)' : 'rgba(255,255,255,0.9)',
+                  border: isDarkMode ? '1px solid #1B2A44' : 'none',
+                  borderRadius: 2,
+                  boxShadow: 3,
+                  p: 2,
+                  maxWidth: 240,
+                  zIndex: 30,
+                }}
+              >
+                <Typography
+                  variant="subtitle1"
+                  fontWeight="bold"
+                  sx={{
+                    color:
+                      locationPingStatus[selectedDock.id] === 'down'
+                        ? '#d32f2f'
+                        : locationPingStatus[selectedDock.id] === 'partial'
+                        ? '#b45309'
+                        : locationPingStatus[selectedDock.id] === 'up'
+                        ? '#2e7d32'
+                        : // : '#1976d2',
+                        isDarkMode
+                        ? '#29B6F6'
+                        : '#1976d2',
+                  }}
+                >
+                  {selectedDock.name}
+                </Typography>
+              </Box>
+            )}
 
-                  {/* Animated dashed line */}
-                  <line
-                    x1={`${x1 * 100}%`}
-                    y1={`${y1 * 100}%`}
-                    x2={`${x2 * 100}%`}
-                    y2={`${y2 * 100}%`}
-                    stroke="white"
-                    strokeWidth="1"
-                    strokeDasharray="4,12"
-                    opacity="0.5"
+            {/* Connection Line - DTS to Server Room */}
+            {!showSwitches &&
+              !showPrinters &&
+              !showUps &&
+              (() => {
+                const dtsDock = docks.find((d) => d.id === 'DTS');
+                const mainServer = staticServers.find((s) => s.id === 'server1');
+
+                if (!dtsDock || !mainServer) return null;
+
+                // Convert percentage strings to numbers for calculation
+                const parsePercentage = (str) => parseFloat(str) / 100;
+
+                const x1 = parsePercentage(dtsDock.x);
+                const y1 = parsePercentage(dtsDock.y);
+                const x2 = parsePercentage(mainServer.left);
+                const y2 = parsePercentage(mainServer.top);
+
+                return (
+                  <svg
+                    style={{
+                      position: 'absolute',
+                      width: '100%',
+                      height: '100%',
+                      top: 0,
+                      left: 0,
+                      pointerEvents: 'none',
+                      zIndex: 22,
+                    }}
                   >
-                    <animate
-                      attributeName="stroke-dashoffset"
-                      values="0;16"
-                      dur="1s"
-                      repeatCount="indefinite"
+                    <defs>
+                      <filter id="glow">
+                        <feGaussianBlur stdDeviation="2" result="coloredBlur" />
+                        <feMerge>
+                          <feMergeNode in="coloredBlur" />
+                          <feMergeNode in="SourceGraphic" />
+                        </feMerge>
+                      </filter>
+
+                      <marker
+                        id="arrowhead"
+                        markerWidth="10"
+                        markerHeight="10"
+                        refX="9"
+                        refY="5"
+                        orient="auto"
+                      >
+                        <path d="M2,2 L8,5 L2,8 Z" fill="#1976d2" />
+                      </marker>
+                    </defs>
+
+                    {/* Glow effect line */}
+                    <line
+                      x1={`${x1 * 100}%`}
+                      y1={`${y1 * 100}%`}
+                      x2={`${x2 * 100}%`}
+                      y2={`${y2 * 100}%`}
+                      // stroke="#2196f3"
+                      stroke={isDarkMode ? '#29B6F6' : '#2196f3'}
+                      strokeWidth="4"
+                      strokeDasharray="8,8"
+                      filter="url(#glow)"
+                      opacity="0.6"
                     />
-                  </line>
-                </svg>
-              );
-            })()}
-                </line>
-              </svg>
-            );
-          })()}
+
+                    {/* Main dotted line */}
+                    <line
+                      x1={`${x1 * 100}%`}
+                      y1={`${y1 * 100}%`}
+                      x2={`${x2 * 100}%`}
+                      y2={`${y2 * 100}%`}
+                      stroke="#1976d2"
+                      strokeWidth="2.5"
+                      strokeDasharray="6,6"
+                      markerEnd="url(#arrowhead)"
+                    />
+
+                    {/* Animated dashed line */}
+                    <line
+                      x1={`${x1 * 100}%`}
+                      y1={`${y1 * 100}%`}
+                      x2={`${x2 * 100}%`}
+                      y2={`${y2 * 100}%`}
+                      stroke="white"
+                      strokeWidth="1"
+                      strokeDasharray="4,12"
+                      opacity="0.5"
+                    >
+                      <animate
+                        attributeName="stroke-dashoffset"
+                        values="0;16"
+                        dur="1s"
+                        repeatCount="indefinite"
+                      />
+                    </line>
+                  </svg>
+                );
+              })()}
           </Box>
         </Box>
 
