@@ -209,13 +209,13 @@
 //       y: '75%',
 //     },
 //     { id: 'CO', name: 'Calibration Office', floors: 2, x: '80%', y: '18%' },
-//     { 
-//       id: 'CA', 
-//       name: 'CDPLC Administrative Building',  
-//       description: 'HR, Supplies, Transport and Welfare and Production Office', 
-//       floors: 4, 
-//       x: '74%', 
-//       y: '28%' 
+//     {
+//       id: 'CA',
+//       name: 'CDPLC Administrative Building',
+//       description: 'HR, Supplies, Transport and Welfare and Production Office',
+//       floors: 4,
+//       x: '74%',
+//       y: '28%'
 //     },
 //     { id: 'MS', name: 'Main Store Building', floors: 5, x: '71%', y: '27%' },
 //     { id: 'FA', name: '40th Anniversary Building', floors: 3, x: '58%', y: '37%' },
@@ -1291,12 +1291,7 @@
 //   );
 // };
 
-
-
-
 // export default PortNavigationApp;
-
-
 
 import axios from 'axios';
 import React, { useState, useEffect, useCallback, useRef } from 'react';
@@ -1317,7 +1312,7 @@ import {
   InputAdornment,
   TextField,
   Fab,
-  useTheme
+  useTheme,
 } from '@mui/material';
 import {
   LocationOn,
@@ -1479,11 +1474,18 @@ export const renderOtherBreakdownTooltip = (breakdown = {}) => {
       {categories.map((cat) => {
         const count = breakdown[cat.key] || 0;
         return (
-          <Box key={cat.key} sx={{ display: 'flex', justifyContent: 'space-between', gap: 2, mb: 0.5 }}>
+          <Box
+            key={cat.key}
+            sx={{ display: 'flex', justifyContent: 'space-between', gap: 2, mb: 0.5 }}
+          >
             <Typography variant="caption" sx={{ color: '#d1d5db' }}>
               {cat.label}:
             </Typography>
-            <Typography variant="caption" fontWeight="bold" sx={{ color: count > 0 ? '#fbbf24' : '#9ca3af' }}>
+            <Typography
+              variant="caption"
+              fontWeight="bold"
+              sx={{ color: count > 0 ? '#fbbf24' : '#9ca3af' }}
+            >
               {count}
             </Typography>
           </Box>
@@ -1590,14 +1592,12 @@ const PortNavigationApp = () => {
     fetchSectors();
   }, []);
 
-  
   const getDeviceCategory = (deviceName, statusMap) => {
     if (!deviceName || !statusMap) return 'down';
     const entry = statusMap[deviceName.trim().toLowerCase()];
     if (!entry) return 'down'; // devices not found in GetMachineStatus default to inactive (down)
     return getDeviceStatusCategory(entry).category;
   };
-
 
   const pingAllLocations = async (sectorsData) => {
     if (!sectorsData || sectorsData.length === 0) return;
@@ -1648,7 +1648,7 @@ const PortNavigationApp = () => {
             try {
               const devResponse = await fetch(
                 `${axios.defaults.baseURL}ICTDevice/GetComDetails?loccode=${sector.Flo_No}&catcodea=${sector.Cat_CodeB}`,
-                { method: 'GET', headers: { Accept: 'application/json' } }
+                { method: 'GET', headers: { Accept: 'application/json' } },
               );
 
               if (!devResponse.ok) return { hasDevice: false, hasDown: false };
@@ -1672,8 +1672,8 @@ const PortNavigationApp = () => {
                       !devicesWithLocation.some(
                         (d) =>
                           (d.ComputerName || d.ComputerCode || '').trim().toLowerCase() ===
-                          (p.ComputerName || p.ComputerCode || '').trim().toLowerCase()
-                      )
+                          (p.ComputerName || p.ComputerCode || '').trim().toLowerCase(),
+                      ),
                   );
                   return [...filteredPrev, ...devicesWithLocation];
                 });
@@ -1726,7 +1726,7 @@ const PortNavigationApp = () => {
                       };
                     }
                     return s;
-                  })
+                  }),
                 );
 
                 return {
@@ -1740,7 +1740,7 @@ const PortNavigationApp = () => {
               console.warn(`Error fetching devices for sector ${sector.Flo_No}:`, sectorErr);
             }
             return { hasDevice: false, sectorTotal: 0, sectorActive: 0, sectorDown: 0 };
-          })
+          }),
         );
 
         // Determine building status from sector results
@@ -1760,11 +1760,11 @@ const PortNavigationApp = () => {
           if (bActive === 0 && bDown === 0) {
             status = 'other';
           } else if (bActive === 0) {
-            status = 'down'; 
+            status = 'down';
           } else if (bActive > 0 && bDown > 0) {
-            status = 'partial'; 
+            status = 'partial';
           } else {
-            status = 'up'; 
+            status = 'up';
           }
         }
 
@@ -1876,11 +1876,11 @@ const PortNavigationApp = () => {
           if (bActive === 0 && bDown === 0) {
             status = 'other';
           } else if (bActive === 0) {
-            status = 'down'; 
+            status = 'down';
           } else if (bActive > 0 && bDown > 0) {
             status = 'partial';
           } else {
-            status = 'up'; 
+            status = 'up';
           }
         }
 
@@ -1925,7 +1925,9 @@ const PortNavigationApp = () => {
 
     dockSectors.forEach((sector) => {
       totalCount += Number(sector.ComputerCount || 0);
-      activeCount += Number(sector.ActiveCount !== undefined ? sector.ActiveCount : (sector.ComputerCount || 0));
+      activeCount += Number(
+        sector.ActiveCount !== undefined ? sector.ActiveCount : sector.ComputerCount || 0,
+      );
       downCount += Number(sector.DownCount || 0);
       otherCount += Number(sector.OtherCount || 0);
       if (sector.OtherBreakdown) {
@@ -1986,7 +1988,9 @@ const PortNavigationApp = () => {
         border: '1px solid rgba(255,255,255,0.1)',
         hoverShadow: '0 4px 12px rgba(0,0,0,0.3)',
         // iconGradient: 'linear-gradient(to right, #3b82f6, #8b5cf6)',
-        iconGradient: isDarkMode ? 'linear-gradient(to right, #29B6F6, #22D3EE)' : 'linear-gradient(to right, #3b82f6, #8b5cf6)',
+        iconGradient: isDarkMode
+          ? 'linear-gradient(to right, #29B6F6, #22D3EE)'
+          : 'linear-gradient(to right, #3b82f6, #8b5cf6)',
       };
     }
 
@@ -2161,7 +2165,7 @@ const PortNavigationApp = () => {
       description: 'HR, Supplies, Transport and Welfare and Production Office',
       floors: 4,
       x: '74%',
-      y: '28%'
+      y: '28%',
     },
     { id: 'MS', name: 'Main Store Building', floors: 5, x: '71%', y: '27%' },
     { id: 'FA', name: '40th Anniversary Building', floors: 3, x: '58%', y: '37%' },
@@ -2176,52 +2180,185 @@ const PortNavigationApp = () => {
 
   // Switch locations data
   const dockswitches = [
-    { id: 1, name: '4th Floor Switch - IT Department & Telephone Exchange', description: '', floors: 1, x: '33%', y: '83%' },
-    { id: 2, name: '5th Floor Switch - Finance Department', description: '', floors: 1, x: '34%', y: '82%' },
-    { id: 3, name: '3rd Floor Switch - Business Department', description: '', floors: 1, x: '32%', y: '84%' },
+    {
+      id: 1,
+      name: '4th Floor Switch - IT Department & Telephone Exchange',
+      description: '',
+      floors: 1,
+      x: '33%',
+      y: '83%',
+    },
+    {
+      id: 2,
+      name: '5th Floor Switch - Finance Department',
+      description: '',
+      floors: 1,
+      x: '34%',
+      y: '82%',
+    },
+    {
+      id: 3,
+      name: '3rd Floor Switch - Business Department',
+      description: '',
+      floors: 1,
+      x: '32%',
+      y: '84%',
+    },
     { id: 4, name: 'Aluminium Shop', description: '', floors: 1, x: '27%', y: '80%' },
     { id: 5, name: 'Service Center', description: '', floors: 1, x: '25%', y: '75%' },
     { id: 6, name: 'Gas Center', description: '', floors: 1, x: '20.5%', y: '73%' },
     { id: 7, name: 'Safety Department', description: '', floors: 1, x: '35%', y: '80%' },
     { id: 8, name: 'Security Office Gate No.01', description: '', floors: 1, x: '38%', y: '77%' },
-    { id: 9, name: '1st Floor - Service Procurement', description: '', floors: 1, x: '38%', y: '58%' },
-    { id: 10, name: 'Ground Floor - Administrative Office', description: '', floors: 1, x: '37%', y: '57%' },
+    {
+      id: 9,
+      name: '1st Floor - Service Procurement',
+      description: '',
+      floors: 1,
+      x: '38%',
+      y: '58%',
+    },
+    {
+      id: 10,
+      name: 'Ground Floor - Administrative Office',
+      description: '',
+      floors: 1,
+      x: '37%',
+      y: '57%',
+    },
     { id: 11, name: 'LOFT Office', description: '', floors: 1, x: '35%', y: '51%' },
     { id: 12, name: 'Scaffolding Office', description: '', floors: 1, x: '36%', y: '41%' },
-    { id: 13, name: 'Steel Hull Construction (SWC) Engineer Office', description: '', floors: 1, x: '46.5%', y: '48%' },
+    {
+      id: 13,
+      name: 'Steel Hull Construction (SWC) Engineer Office',
+      description: '',
+      floors: 1,
+      x: '46.5%',
+      y: '48%',
+    },
     { id: 14, name: 'Samagi Office', description: '', floors: 1, x: '45%', y: '46.5%' },
     { id: 15, name: 'Site Erection Office', description: '', floors: 1, x: '85%', y: '61%' },
     { id: 16, name: 'Training Center', description: '', floors: 1, x: '63.5%', y: '23.5%' },
-    { id: 17, name: 'Training Center - Class Room C', description: '', floors: 1, x: '60%', y: '24%' },
-    { id: 18, name: 'Quality Control Department', description: '', floors: 1, x: '60.5%', y: '20%' },
+    {
+      id: 17,
+      name: 'Training Center - Class Room C',
+      description: '',
+      floors: 1,
+      x: '60%',
+      y: '24%',
+    },
+    {
+      id: 18,
+      name: 'Quality Control Department',
+      description: '',
+      floors: 1,
+      x: '60.5%',
+      y: '20%',
+    },
     { id: 19, name: 'Dock Electrical Office', description: '', floors: 1, x: '65%', y: '30%' },
     { id: 20, name: 'Main Stores - Location C', description: '', floors: 1, x: '73%', y: '31%' },
-    { id: 21, name: 'Production Office Switch (Old)', description: '', floors: 1, x: '75%', y: '33%' },
+    {
+      id: 21,
+      name: 'Production Office Switch (Old)',
+      description: '',
+      floors: 1,
+      x: '75%',
+      y: '33%',
+    },
     { id: 22, name: 'HR Office', description: '', floors: 1, x: '74%', y: '29%' },
-    { id: 23, name: 'Fitting Shop Engineer Office', description: '', floors: 1, x: '78.5%', y: '13.5%' },
+    {
+      id: 23,
+      name: 'Fitting Shop Engineer Office',
+      description: '',
+      floors: 1,
+      x: '78.5%',
+      y: '13.5%',
+    },
     { id: 24, name: 'Electrical Shop Office', description: '', floors: 1, x: '88%', y: '29.5%' },
     { id: 25, name: 'Calibration Office ', description: '', floors: 1, x: '83%', y: '22%' },
     { id: 26, name: 'Deck Fitting Shop Office', description: '', floors: 1, x: '89%', y: '25.5%' },
     { id: 27, name: 'Welfare Canteen Office', description: '', floors: 1, x: '76%', y: '21%' },
-    { id: 28, name: 'Transport and Welfare Office', description: '', floors: 1, x: '73%', y: '25%' },
+    {
+      id: 28,
+      name: 'Transport and Welfare Office',
+      description: '',
+      floors: 1,
+      x: '73%',
+      y: '25%',
+    },
     { id: 29, name: 'Blasting Chamber Office', description: '', floors: 1, x: '90%', y: '51%' },
     { id: 30, name: '1st Floor Switch', description: '', floors: 1, x: '30%', y: '84%' },
-    { id: 31, name: 'Gate No.01 Time Clock Switch (Security Hut)', description: '', floors: 1, x: '33.5%', y: '79%' },
-    { id: 32, name: 'Deck Department Field Office', description: '', floors: 1, x: '42%', y: '63%' },
+    {
+      id: 31,
+      name: 'Gate No.01 Time Clock Switch (Security Hut)',
+      description: '',
+      floors: 1,
+      x: '33.5%',
+      y: '79%',
+    },
+    {
+      id: 32,
+      name: 'Deck Department Field Office',
+      description: '',
+      floors: 1,
+      x: '42%',
+      y: '63%',
+    },
     { id: 33, name: 'NBD Tool Stores', description: '', floors: 1, x: '45%', y: '51%' },
     { id: 34, name: 'Fire Unit Stores', description: '', floors: 1, x: '52%', y: '38.5%' },
     { id: 35, name: 'Carpentry Shop Office', description: '', floors: 1, x: '45%', y: '37.5%' },
     { id: 36, name: 'Machinery Outfitting Shop', description: '', floors: 1, x: '50%', y: '45%' },
-    { id: 37, name: '40th Anniversary Building Network Switch', description: '', floors: 1, x: '60%', y: '39%' },
+    {
+      id: 37,
+      name: '40th Anniversary Building Network Switch',
+      description: '',
+      floors: 1,
+      x: '60%',
+      y: '39%',
+    },
     { id: 38, name: 'Component Shop Office', description: '', floors: 1, x: '43%', y: '49%' },
-    { id: 39, name: '2nd Floor Lunch Room Camera Switch', description: '', floors: 1, x: '31%', y: '85%' },
+    {
+      id: 39,
+      name: '2nd Floor Lunch Room Camera Switch',
+      description: '',
+      floors: 1,
+      x: '31%',
+      y: '85%',
+    },
     { id: 40, name: 'South Pier Camera Switch', description: '', floors: 1, x: '11%', y: '47%' },
     { id: 41, name: 'Location D Switch (Old)', description: '', floors: 1, x: '48.5%', y: '47.5%' },
     { id: 42, name: 'Gate No.2 Camera Switch', description: '', floors: 1, x: '58%', y: '43%' },
-    { id: 43, name: 'SWC Unit Office Network Switch', description: '', floors: 1, x: '81%', y: '39%' },
-    { id: 44, name: 'Gate No.3 (Security Hut) Network Switch', description: '', floors: 1, x: '77%', y: '9.5%' },
-    { id: 45, name: 'New Sub Contract Network Switch', description: '', floors: 1, x: '45.5%', y: '16%' },
-    { id: 46, name: 'Production Office Switch (New)', description: '', floors: 1, x: '75.5%', y: '31.5%' },
+    {
+      id: 43,
+      name: 'SWC Unit Office Network Switch',
+      description: '',
+      floors: 1,
+      x: '81%',
+      y: '39%',
+    },
+    {
+      id: 44,
+      name: 'Gate No.3 (Security Hut) Network Switch',
+      description: '',
+      floors: 1,
+      x: '77%',
+      y: '9.5%',
+    },
+    {
+      id: 45,
+      name: 'New Sub Contract Network Switch',
+      description: '',
+      floors: 1,
+      x: '45.5%',
+      y: '16%',
+    },
+    {
+      id: 46,
+      name: 'Production Office Switch (New)',
+      description: '',
+      floors: 1,
+      x: '75.5%',
+      y: '31.5%',
+    },
     { id: 47, name: 'Supplies Switch', description: '', floors: 1, x: '76%', y: '30%' },
   ];
 
@@ -2240,21 +2377,24 @@ const PortNavigationApp = () => {
       name: 'Security Office Gate No.01',
       description: 'Security Office Gate No.01',
       floors: 3,
-      x: '38%', y: '79%'
+      x: '38%',
+      y: '79%',
     },
     {
       id: 'SP',
       name: 'Service Procurement',
       description: 'Service Procurement',
       floors: 3,
-      x: '40%', y: '60%'
+      x: '40%',
+      y: '60%',
     },
     {
       id: 'AO',
       name: 'Administrative Office',
       description: 'Administrative Office',
       floors: 3,
-      x: '38%', y: '58%'
+      x: '38%',
+      y: '58%',
     },
 
     {
@@ -2262,7 +2402,8 @@ const PortNavigationApp = () => {
       name: 'LOFT Office',
       description: 'LOFT Office',
       floors: 0,
-      x: '35%', y: '51%'
+      x: '35%',
+      y: '51%',
     },
 
     {
@@ -2271,100 +2412,112 @@ const PortNavigationApp = () => {
       description: 'SWR Supervisor Office',
       floors: 1,
       x: '46%',
-      y: '47%'
+      y: '47%',
     },
     {
       id: 'NBD',
       name: 'NBD Tool Stores',
       description: 'NBD Tool Stores',
       floors: 1,
-      x: '46%', y: '51%',
+      x: '46%',
+      y: '51%',
     },
     {
       id: 'MAO',
       name: 'MAO Engineering Office',
       description: 'MAO Engineering Office',
       floors: 4,
-      x: '50%', y: '45%'
+      x: '50%',
+      y: '45%',
     },
     {
       id: 'CS',
       name: 'Carpentry Shop',
       description: 'Carpentry Shop',
       floors: 4,
-      x: '47%', y: '39%'
+      x: '47%',
+      y: '39%',
     },
     {
       id: 'AB40',
       name: '40th Anniversary Building',
       description: '40th Anniversary Building',
       floors: 4,
-      x: '60%', y: '39%'
+      x: '60%',
+      y: '39%',
     },
     {
       id: 'SEO',
       name: 'Site Erection Office',
       description: 'Site Erection Office',
       floors: 4,
-      x: '85%', y: '61%'
+      x: '85%',
+      y: '61%',
     },
-
 
     {
       id: 'SWC',
       name: 'SWC Unit Office',
       description: 'SWC Unit Office',
       floors: 4,
-      x: '79%', y: '39%'
+      x: '79%',
+      y: '39%',
     },
     {
       id: 'TER',
       name: 'Telephone Exchange Room',
       description: 'Telephone Exchange Room',
       floors: 4,
-      x: '73%', y: '31%'
+      x: '73%',
+      y: '31%',
     },
     {
       id: 'MSC',
       name: 'Main Store - Location C',
       description: 'Main Store - Location C',
       floors: 4,
-      x: '72%', y: '28%'
+      x: '72%',
+      y: '28%',
     },
     {
       id: 'TC',
       name: 'Training Center',
       description: 'Training Center',
       floors: 4,
-      x: '61%', y: '25%'
+      x: '61%',
+      y: '25%',
     },
     {
       id: 'QCD',
       name: 'Quality Control Department',
       description: 'Quality Control Department',
       floors: 4,
-      x: '59%', y: '19%'
+      x: '59%',
+      y: '19%',
     },
     {
       id: 'ESO',
       name: 'Electrical Shop Office',
       description: 'Electrical Shop Office',
       floors: 4,
-      x: '87%', y: '29%'
+      x: '87%',
+      y: '29%',
     },
     {
       id: 'CAL',
       name: 'Calibration Office',
       description: 'Calibration Office',
       floors: 4,
-      x: '80%', y: '18%'
+      x: '80%',
+      y: '18%',
     },
     {
       id: 'FSEO',
       name: 'Fitting Shop Engineer Office',
       description: 'Fitting Shop Engineer Office',
       floors: 4,
-      x: '76%', y: '12%'
+      x: '76%',
+      y: '12%',
     },
     // Add more UPS locations as needed
   ];
@@ -2385,7 +2538,7 @@ const PortNavigationApp = () => {
       description: 'Buisness Department',
       floors: 3,
       x: '31%',
-      y: '85%'
+      y: '85%',
     },
     {
       id: 'NBMO',
@@ -2393,7 +2546,7 @@ const PortNavigationApp = () => {
       description: 'New Building Marketing office',
       floors: 1,
       x: '33%',
-      y: '83%'
+      y: '83%',
     },
     {
       id: 'IT',
@@ -2401,123 +2554,136 @@ const PortNavigationApp = () => {
       description: 'IT Department',
       floors: 4,
       x: '34%',
-      y: '82%'
+      y: '82%',
     },
     {
       id: 'DO',
       name: 'Design Office',
       description: 'Design Office',
       floors: 4,
-      x: '35%', y: '80%',
+      x: '35%',
+      y: '80%',
     },
     {
       id: 'SD',
       name: 'Safety Department',
       description: 'Safety Department',
       floors: 4,
-      x: '38%', y: '80%'
+      x: '38%',
+      y: '80%',
     },
     {
       id: 'FD',
       name: 'Finance Department',
       description: 'Finance Department',
       floors: 4,
-      x: '36%', y: '80%',
+      x: '36%',
+      y: '80%',
     },
     {
       id: 'SP',
       name: 'Service Procurement',
       description: 'Service Procurement',
       floors: 4,
-      x: '38%', y: '58%'
+      x: '38%',
+      y: '58%',
     },
     {
       id: 'MOO',
       name: 'Machinery Outfitting Office',
       description: 'Machinery Outfitting Office',
       floors: 4,
-      x: '49%', y: '45%'
+      x: '49%',
+      y: '45%',
     },
     {
       id: 'YD',
       name: 'Yard Development Office',
       description: 'Yard Development Office',
       floors: 4,
-      x: '58%', y: '43%'
+      x: '58%',
+      y: '43%',
     },
     {
       id: 'WA',
       name: 'Welfare Association Office',
       description: 'Welfare Association Office',
       floors: 4,
-      x: '61%', y: '42%'
+      x: '61%',
+      y: '42%',
     },
     {
       id: 'SE',
       name: 'Site Erection Office',
       description: 'Site Erection Office',
       floors: 4,
-      x: '79%', y: '60%'
+      x: '79%',
+      y: '60%',
     },
     {
       id: 'SWC',
       name: 'SWC Unit Office',
       description: 'SWC Unit Office',
       floors: 4,
-      x: '81%', y: '39%'
+      x: '81%',
+      y: '39%',
     },
     {
       id: 'SUP',
       name: 'Supplies Office',
       description: 'Supplies Office',
       floors: 4,
-      x: '73%', y: '31%'
+      x: '73%',
+      y: '31%',
     },
     {
       id: 'PRO',
       name: 'Production Office',
       description: 'Production Office',
       floors: 4,
-      x: '75.5%', y: '31.5%'
+      x: '75.5%',
+      y: '31.5%',
     },
     {
       id: 'HR',
       name: 'HR Office',
       description: 'HR Office',
       floors: 4,
-      x: '74%', y: '29%'
+      x: '74%',
+      y: '29%',
     },
     {
       id: 'TR',
       name: 'Training Center',
       description: 'Training Center',
       floors: 4,
-      x: '63.5%', y: '23.5%'
+      x: '63.5%',
+      y: '23.5%',
     },
     {
       id: 'QC',
       name: 'Quality Control Department',
       description: 'Quality Control Department',
       floors: 4,
-      x: '60.5%', y: '20%'
+      x: '60.5%',
+      y: '20%',
     },
     {
       id: 'CAL',
       name: 'Calibration Office',
       description: 'Calibration Office',
       floors: 4,
-      x: '83%', y: '22%'
+      x: '83%',
+      y: '22%',
     },
     {
       id: 'FSE',
       name: 'Fitting Shop Engineer Office',
       description: 'Fitting Shop Engineer Office',
       floors: 4,
-      x: '78.5%', y: '13.5%'
+      x: '78.5%',
+      y: '13.5%',
     },
-
-
-
 
     // Add more printer locations as needed
   ];
@@ -2586,7 +2752,7 @@ const PortNavigationApp = () => {
 
     // 3. Find or construct sector object
     const sector = allSectorsData.find(
-      (s) => s.Flo_No === device.Flo_No && s.Cat_CodeB === device.Cat_CodeB
+      (s) => s.Flo_No === device.Flo_No && s.Cat_CodeB === device.Cat_CodeB,
     ) || {
       Flo_No: device.Flo_No,
       Flo_Code: device.Flo_Code,
@@ -2675,7 +2841,9 @@ const PortNavigationApp = () => {
       );
       sidebarTitle = 'Printer Locations';
       // sidebarIcon = <Print sx={{ mr: 1, fontSize: 16, color: '#1976d2' }} />;
-      sidebarIcon = <Print sx={{ mr: 1, fontSize: 16, color: isDarkMode ? '#29B6F6' : '#1976d2' }} />;
+      sidebarIcon = (
+        <Print sx={{ mr: 1, fontSize: 16, color: isDarkMode ? '#29B6F6' : '#1976d2' }} />
+      );
       hoveredState = hoveredPrinter;
       setHoveredState = setHoveredPrinter;
     } else if (showUps) {
@@ -2690,7 +2858,9 @@ const PortNavigationApp = () => {
       sidebarItems = filteredDocks;
       sidebarTitle = 'Building Locations';
       // sidebarIcon = <LocationOn sx={{ mr: 1, fontSize: 16, color: '#1976d2' }} />;
-      sidebarIcon = <LocationOn sx={{ mr: 1, fontSize: 16, color: isDarkMode ? '#29B6F6' : '#1976d2' }} />;
+      sidebarIcon = (
+        <LocationOn sx={{ mr: 1, fontSize: 16, color: isDarkMode ? '#29B6F6' : '#1976d2' }} />
+      );
       hoveredState = hoveredDock;
       setHoveredState = setHoveredDock;
     }
@@ -2728,7 +2898,9 @@ const PortNavigationApp = () => {
               // borderBottom: '1px solid #e0e0e0',
               borderBottom: isDarkMode ? '1px solid #1B2A44' : '1px solid #e0e0e0',
               // background: 'linear-gradient(135deg, #1976d2, #1565c0)',
-              background: isDarkMode ? 'linear-gradient(135deg, #0EA5C9, #0B4A63)' : 'linear-gradient(135deg, #1976d2, #1565c0)',
+              background: isDarkMode
+                ? 'linear-gradient(135deg, #0EA5C9, #0B4A63)'
+                : 'linear-gradient(135deg, #1976d2, #1565c0)',
             }}
           >
             <Typography
@@ -2741,7 +2913,14 @@ const PortNavigationApp = () => {
           </Box>
 
           {/* Search Type Selector */}
-          <Box sx={{ display: 'flex', borderBottom: '1px solid #e0e0e0', p: 0.5, backgroundColor: '#f9f9f9' }}>
+          <Box
+            sx={{
+              display: 'flex',
+              borderBottom: '1px solid #e0e0e0',
+              p: 0.5,
+              backgroundColor: '#f9f9f9',
+            }}
+          >
             <Button
               size="small"
               fullWidth
@@ -2761,7 +2940,7 @@ const PortNavigationApp = () => {
                 color: searchType === 'locations' ? 'white' : '#555',
                 '&:hover': {
                   backgroundColor: searchType === 'locations' ? '#1565c0' : 'rgba(0,0,0,0.04)',
-                }
+                },
               }}
             >
               Locations
@@ -2785,7 +2964,7 @@ const PortNavigationApp = () => {
                 color: searchType === 'devices' ? 'white' : '#555',
                 '&:hover': {
                   backgroundColor: searchType === 'devices' ? '#1565c0' : 'rgba(0,0,0,0.04)',
-                }
+                },
               }}
             >
               Devices
@@ -2794,11 +2973,17 @@ const PortNavigationApp = () => {
 
           {/* Search Bar */}
           {/* <Box sx={{ p: 1.2, borderBottom: '1px solid #f0f0f0' }}> */}
-          <Box sx={{ p: 1.2, borderBottom: isDarkMode ? '1px solid #1B2A44' : '1px solid #f0f0f0' }}>
+          <Box
+            sx={{ p: 1.2, borderBottom: isDarkMode ? '1px solid #1B2A44' : '1px solid #f0f0f0' }}
+          >
             <TextField
               size="small"
               fullWidth
-              placeholder={searchType === 'devices' ? 'Search devices by name or IP...' : `Search ${sidebarTitle.toLowerCase()}...`}
+              placeholder={
+                searchType === 'devices'
+                  ? 'Search devices by name or IP...'
+                  : `Search ${sidebarTitle.toLowerCase()}...`
+              }
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               InputProps={{
@@ -2827,217 +3012,235 @@ const PortNavigationApp = () => {
               },
             }}
           >
-            {searchType === 'devices' ? (
-              filteredDevices.map((dev, index) => {
-                const devName = dev.ComputerName || dev.ComputerCode || 'Unknown Device';
-                const devIp = dev.IP_Addres || dev.Com_IP || dev.ip || dev.IpAddress || 'No IP';
-                const isPrinter = (dev.Com_Type || '').toLowerCase().includes('printer');
+            {searchType === 'devices'
+              ? filteredDevices.map((dev, index) => {
+                  const devName = dev.ComputerName || dev.ComputerCode || 'Unknown Device';
+                  const devIp = dev.IP_Addres || dev.Com_IP || dev.ip || dev.IpAddress || 'No IP';
+                  const isPrinter = (dev.Com_Type || '').toLowerCase().includes('printer');
 
-                const dock = docks.find((d) => d.id === dev.Build_Code);
-                const dockName = dock ? dock.description || dock.name : dev.Build_Code;
-                const floorText = dev.Flo_Code === '0' ? 'Ground Floor' : `${dev.Flo_Code} Floor`;
-                const locationLabel = `${dockName} - ${floorText} - ${dev.Flo_Name}`;
-                const devKey = `${devName}-${devIp}-${index}`;
+                  const dock = docks.find((d) => d.id === dev.Build_Code);
+                  const dockName = dock ? dock.description || dock.name : dev.Build_Code;
+                  const floorText = dev.Flo_Code === '0' ? 'Ground Floor' : `${dev.Flo_Code} Floor`;
+                  const locationLabel = `${dockName} - ${floorText} - ${dev.Flo_Name}`;
+                  const devKey = `${devName}-${devIp}-${index}`;
 
-                return (
-                  <Tooltip key={devKey} title={locationLabel} arrow placement="right">
-                    <Box
-                      sx={{
-                        p: 1.5,
-                        pl: 2,
-                        cursor: 'pointer',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        justifyContent: 'center',
-                        borderLeft: '4px solid transparent',
-                        borderBottom: '1px solid #f3f4f6',
-                        '&:hover': {
-                          backgroundColor: isDarkMode ? 'rgba(255,255,255,0.05)' : '#f3f4f6',
-                          borderLeft: '4px solid #1976d2',
-                          transform: 'translateX(4px)',
-                        },
-                        transition: 'all 0.25s ease',
-                      }}
-                      onClick={() => handleSearchDeviceClick(dev)}
-                    >
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.5 }}>
-                        {isPrinter ? (
-                          <Print sx={{ fontSize: 16, color: isDarkMode ? '#29B6F6' : '#1976d2' }} />
-                        ) : (
-                          <Computer sx={{ fontSize: 16, color: isDarkMode ? '#29B6F6' : '#1976d2' }} />
-                        )}
+                  return (
+                    <Tooltip key={devKey} title={locationLabel} arrow placement="right">
+                      <Box
+                        sx={{
+                          p: 1.5,
+                          pl: 2,
+                          cursor: 'pointer',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          justifyContent: 'center',
+                          borderLeft: '4px solid transparent',
+                          borderBottom: '1px solid #f3f4f6',
+                          '&:hover': {
+                            backgroundColor: isDarkMode ? 'rgba(255,255,255,0.05)' : '#f3f4f6',
+                            borderLeft: '4px solid #1976d2',
+                            transform: 'translateX(4px)',
+                          },
+                          transition: 'all 0.25s ease',
+                        }}
+                        onClick={() => handleSearchDeviceClick(dev)}
+                      >
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.5 }}>
+                          {isPrinter ? (
+                            <Print
+                              sx={{ fontSize: 16, color: isDarkMode ? '#29B6F6' : '#1976d2' }}
+                            />
+                          ) : (
+                            <Computer
+                              sx={{ fontSize: 16, color: isDarkMode ? '#29B6F6' : '#1976d2' }}
+                            />
+                          )}
+                          <Typography
+                            variant="body2"
+                            sx={{
+                              fontSize: '14px',
+                              fontWeight: 600,
+                              color: isDarkMode ? '#E2E8F0' : '#1e293b',
+                            }}
+                          >
+                            {devName}
+                          </Typography>
+                        </Box>
                         <Typography
-                          variant="body2"
-                          sx={{
-                            fontSize: '14px',
-                            fontWeight: 600,
-                            color: isDarkMode ? '#E2E8F0' : '#1e293b',
-                          }}
+                          variant="caption"
+                          color="text.secondary"
+                          sx={{ fontSize: '11px', pl: 2.5 }}
                         >
-                          {devName}
+                          IP: {devIp}
+                        </Typography>
+                        <Typography
+                          variant="caption"
+                          color="primary.light"
+                          sx={{ fontSize: '10px', pl: 2.5, fontWeight: 500 }}
+                        >
+                          {locationLabel}
                         </Typography>
                       </Box>
-                      <Typography variant="caption" color="text.secondary" sx={{ fontSize: '11px', pl: 2.5 }}>
-                        IP: {devIp}
-                      </Typography>
-                      <Typography variant="caption" color="primary.light" sx={{ fontSize: '10px', pl: 2.5, fontWeight: 500 }}>
-                        {locationLabel}
-                      </Typography>
-                    </Box>
-                  </Tooltip>
-                );
-              })
-            ) : (
-              sidebarItems.map((item) => {
-                const isSelected = selectedDock?.id === item.id && !showSwitches && !showPrinters && !showUps;
-                const isHovered = hoveredState === item.id;
+                    </Tooltip>
+                  );
+                })
+              : sidebarItems.map((item) => {
+                  const isSelected =
+                    selectedDock?.id === item.id && !showSwitches && !showPrinters && !showUps;
+                  const isHovered = hoveredState === item.id;
 
-                let itemColors = {
-                  main: isDarkMode ? '#29B6F6' : '#1976d2',
-                  text: isDarkMode ? '#29B6F6' : '#1976d2',
-                  bgColor: 'rgba(25, 118, 210, 0.08)',
-                  hoverBg: 'rgba(25, 118, 210, 0.16)',
-                };
-
-                if (showSwitches) {
-                  itemColors = {
-                    main: '#388e3c',
-                    text: '#2e7d32',
-                    bgColor: 'rgba(56, 142, 60, 0.08)',
-                    hoverBg: 'rgba(56, 142, 60, 0.16)',
-                  };
-                } else if (showPrinters) {
-                  itemColors = {
+                  let itemColors = {
                     main: isDarkMode ? '#29B6F6' : '#1976d2',
-                    text: isDarkMode ? '#0B84A8' : '#1565c0',
+                    text: isDarkMode ? '#29B6F6' : '#1976d2',
                     bgColor: 'rgba(25, 118, 210, 0.08)',
                     hoverBg: 'rgba(25, 118, 210, 0.16)',
                   };
-                } else if (showUps) {
-                  itemColors = {
-                    main: '#ed6c02',
-                    text: '#d84315',
-                    bgColor: 'rgba(237, 108, 2, 0.08)',
-                    hoverBg: 'rgba(237, 108, 2, 0.16)',
-                  };
-                } else {
-                  const status = locationPingStatus[item.id];
-                  if (status === 'down') {
+
+                  if (showSwitches) {
                     itemColors = {
-                      main: '#f44336',
-                      text: '#d32f2f',
-                      bgColor: 'rgba(244, 67, 54, 0.08)',
-                      hoverBg: 'rgba(244, 67, 54, 0.16)',
-                    };
-                  } else if (status === 'partial') {
-                    itemColors = {
-                      main: '#f59e0b',
-                      text: '#b45309',
-                      bgColor: 'rgba(245, 158, 11, 0.08)',
-                      hoverBg: 'rgba(245, 158, 11, 0.16)',
-                    };
-                  } else if (status === 'up') {
-                    itemColors = {
-                      main: '#4caf50',
+                      main: '#388e3c',
                       text: '#2e7d32',
-                      bgColor: 'rgba(76, 175, 80, 0.08)',
-                      hoverBg: 'rgba(76, 175, 80, 0.16)',
+                      bgColor: 'rgba(56, 142, 60, 0.08)',
+                      hoverBg: 'rgba(56, 142, 60, 0.16)',
                     };
+                  } else if (showPrinters) {
+                    itemColors = {
+                      main: isDarkMode ? '#29B6F6' : '#1976d2',
+                      text: isDarkMode ? '#0B84A8' : '#1565c0',
+                      bgColor: 'rgba(25, 118, 210, 0.08)',
+                      hoverBg: 'rgba(25, 118, 210, 0.16)',
+                    };
+                  } else if (showUps) {
+                    itemColors = {
+                      main: '#ed6c02',
+                      text: '#d84315',
+                      bgColor: 'rgba(237, 108, 2, 0.08)',
+                      hoverBg: 'rgba(237, 108, 2, 0.16)',
+                    };
+                  } else {
+                    const status = locationPingStatus[item.id];
+                    if (status === 'down') {
+                      itemColors = {
+                        main: '#f44336',
+                        text: '#d32f2f',
+                        bgColor: 'rgba(244, 67, 54, 0.08)',
+                        hoverBg: 'rgba(244, 67, 54, 0.16)',
+                      };
+                    } else if (status === 'partial') {
+                      itemColors = {
+                        main: '#f59e0b',
+                        text: '#b45309',
+                        bgColor: 'rgba(245, 158, 11, 0.08)',
+                        hoverBg: 'rgba(245, 158, 11, 0.16)',
+                      };
+                    } else if (status === 'up') {
+                      itemColors = {
+                        main: '#4caf50',
+                        text: '#2e7d32',
+                        bgColor: 'rgba(76, 175, 80, 0.08)',
+                        hoverBg: 'rgba(76, 175, 80, 0.16)',
+                      };
+                    } else if (status === 'other') {
+                      itemColors = {
+                        main: '#9ca3af',
+                        text: '#6b7280',
+                        bgColor: 'rgba(156, 163, 175, 0.08)',
+                        hoverBg: 'rgba(156, 163, 175, 0.16)',
+                      };
+                    }
                   }
-                }
-                }else if (status === 'other') {
-                  itemColors = {
-                    main: '#9ca3af',
-                    text: '#6b7280',
-                    bgColor: 'rgba(156, 163, 175, 0.08)',
-                    hoverBg: 'rgba(156, 163, 175, 0.16)',
-                  };
-                }
-                  }
-            
 
-                const itemIcon = showSwitches ? (
-                  <Storage sx={{ mr: 1, fontSize: 18, color: itemColors.main }} />
-                ) : showPrinters ? (
-                  <Print sx={{ mr: 1, fontSize: 18, color: itemColors.main }} />
-                ) : showUps ? (
-                  <img src={UpsIcon} alt="UPS" style={{ width: 18, height: 18, marginRight: 8 }} />
-                ) : (
-                  <LocationOn sx={{ mr: 1, fontSize: 18, color: itemColors.main }} />
-                );
+                  const itemIcon = showSwitches ? (
+                    <Storage sx={{ mr: 1, fontSize: 18, color: itemColors.main }} />
+                  ) : showPrinters ? (
+                    <Print sx={{ mr: 1, fontSize: 18, color: itemColors.main }} />
+                  ) : showUps ? (
+                    <img
+                      src={UpsIcon}
+                      alt="UPS"
+                      style={{ width: 18, height: 18, marginRight: 8 }}
+                    />
+                  ) : (
+                    <LocationOn sx={{ mr: 1, fontSize: 18, color: itemColors.main }} />
+                  );
 
-                return (
-                  <Tooltip key={item.id} title={item.name} arrow placement="right">
-                    <Box
-                      sx={{
-                        p: 1.5,
-                        pl: 2,
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        backgroundColor: isSelected
-                          ? itemColors.bgColor
-                          : isHovered
-                          ? itemColors.hoverBg
-                          : 'transparent',
-                        borderLeft: isSelected || isHovered
-                          ? `4px solid ${itemColors.main}`
-                          : `4px solid ${itemColors.main}60`,
-                        '&:hover': {
-                          backgroundColor: itemColors.hoverBg,
-                          transform: 'translateX(4px)',
-                        },
-                        transition: 'all 0.25s ease',
-                      }}
-                      onClick={() => {
-                        if (showSwitches) console.log('Switch clicked:', item.name);
-                        else if (showPrinters) console.log('Printer clicked:', item.name);
-                        else if (showUps) console.log('UPS clicked:', item.name);
-                        else handleDockClick(item);
-                      }}
-                      onMouseEnter={() => setHoveredState(item.id)}
-                      onMouseLeave={() => setHoveredState(null)}
-                    >
-                      <Box sx={{ display: 'flex', alignItems: 'center', overflow: 'hidden' }}>
-                        {itemIcon}
-                        <Typography
-                          variant="body2"
-                          noWrap
-                          sx={{
-                            fontSize: '14px',
-                            fontWeight: isSelected || isHovered ? 700 : 600,
-                            color: itemColors.text,
-                          }}
-                        >
-                          {item.name}
-                        </Typography>
+                  return (
+                    <Tooltip key={item.id} title={item.name} arrow placement="right">
+                      <Box
+                        sx={{
+                          p: 1.5,
+                          pl: 2,
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          backgroundColor: isSelected
+                            ? itemColors.bgColor
+                            : isHovered
+                            ? itemColors.hoverBg
+                            : 'transparent',
+                          borderLeft:
+                            isSelected || isHovered
+                              ? `4px solid ${itemColors.main}`
+                              : `4px solid ${itemColors.main}60`,
+                          '&:hover': {
+                            backgroundColor: itemColors.hoverBg,
+                            transform: 'translateX(4px)',
+                          },
+                          transition: 'all 0.25s ease',
+                        }}
+                        onClick={() => {
+                          if (showSwitches) console.log('Switch clicked:', item.name);
+                          else if (showPrinters) console.log('Printer clicked:', item.name);
+                          else if (showUps) console.log('UPS clicked:', item.name);
+                          else handleDockClick(item);
+                        }}
+                        onMouseEnter={() => setHoveredState(item.id)}
+                        onMouseLeave={() => setHoveredState(null)}
+                      >
+                        <Box sx={{ display: 'flex', alignItems: 'center', overflow: 'hidden' }}>
+                          {itemIcon}
+                          <Typography
+                            variant="body2"
+                            noWrap
+                            sx={{
+                              fontSize: '14px',
+                              fontWeight: isSelected || isHovered ? 700 : 600,
+                              color: itemColors.text,
+                            }}
+                          >
+                            {item.name}
+                          </Typography>
+                        </Box>
+
+                        {!showSwitches && !showPrinters && !showUps && (
+                          <Box
+                            sx={{
+                              width: 8,
+                              height: 8,
+                              borderRadius: '50%',
+                              backgroundColor: itemColors.main,
+                              boxShadow: `0 0 6px ${itemColors.main}`,
+                              flexShrink: 0,
+                              ml: 1,
+                            }}
+                          />
+                        )}
                       </Box>
+                    </Tooltip>
+                  );
+                })}
 
-                      {!showSwitches && !showPrinters && !showUps && (
-                        <Box
-                          sx={{
-                            width: 8,
-                            height: 8,
-                            borderRadius: '50%',
-                            backgroundColor: itemColors.main,
-                            boxShadow: `0 0 6px ${itemColors.main}`,
-                            flexShrink: 0,
-                            ml: 1,
-                          }}
-                        />
-                      )}
-                    </Box>
-                  </Tooltip>
-                );
-              })
-            )}
-
-            {searchType === 'devices' && searchQuery.trim() !== '' && filteredDevices.length === 0 && (
-              <Typography variant="body2" sx={{ color: isDarkMode ? '#7C93B3' : 'gray', p: 2, textAlign: 'center' }}>
-                No devices found
-              </Typography>
-            )}
+            {searchType === 'devices' &&
+              searchQuery.trim() !== '' &&
+              filteredDevices.length === 0 && (
+                <Typography
+                  variant="body2"
+                  sx={{ color: isDarkMode ? '#7C93B3' : 'gray', p: 2, textAlign: 'center' }}
+                >
+                  No devices found
+                </Typography>
+              )}
 
             {searchType === 'devices' && searchQuery.trim() === '' && (
               <Box sx={{ p: 3, textAlign: 'center' }}>
@@ -3046,11 +3249,21 @@ const PortNavigationApp = () => {
                   Type a device name or IP to search
                 </Typography>
                 {allDevices.length > 0 ? (
-                  <Typography variant="caption" color="textSecondary" display="block" sx={{ mt: 1, fontSize: '11px', color: '#94a3b8' }}>
+                  <Typography
+                    variant="caption"
+                    color="textSecondary"
+                    display="block"
+                    sx={{ mt: 1, fontSize: '11px', color: '#94a3b8' }}
+                  >
                     Indexing complete ({allDevices.length} devices found)
                   </Typography>
                 ) : (
-                  <Typography variant="caption" color="textSecondary" display="block" sx={{ mt: 1, fontSize: '11px', color: '#3b82f6' }}>
+                  <Typography
+                    variant="caption"
+                    color="textSecondary"
+                    display="block"
+                    sx={{ mt: 1, fontSize: '11px', color: '#3b82f6' }}
+                  >
                     Indexing devices in background...
                   </Typography>
                 )}
@@ -3058,7 +3271,10 @@ const PortNavigationApp = () => {
             )}
 
             {sidebarItems.length === 0 && searchType !== 'devices' && (
-              <Typography variant="body2" sx={{ color: isDarkMode ? '#7C93B3' : 'gray', p: 2, textAlign: 'center' }}>
+              <Typography
+                variant="body2"
+                sx={{ color: isDarkMode ? '#7C93B3' : 'gray', p: 2, textAlign: 'center' }}
+              >
                 No items found
               </Typography>
             )}
@@ -3082,7 +3298,9 @@ const PortNavigationApp = () => {
           />
 
           {/* Map Tool Buttons */}
-          <Box sx={{ position: 'absolute', top: 16, left: 16, zIndex: 40, display: 'flex', gap: 1 }}>
+          <Box
+            sx={{ position: 'absolute', top: 16, left: 16, zIndex: 40, display: 'flex', gap: 1 }}
+          >
             <Tooltip title="Network Switch Map" arrow>
               <IconButton
                 onClick={() => {
@@ -3117,12 +3335,18 @@ const PortNavigationApp = () => {
               </IconButton>
             </Tooltip>
 
-            <Tooltip title={showSwitches ? "Show Buildings" : "Show Switches"} arrow>
+            <Tooltip title={showSwitches ? 'Show Buildings' : 'Show Switches'} arrow>
               <IconButton
                 onClick={toggleSwitches}
                 sx={{
                   // bgcolor: showSwitches ? '#e0f2fe' : 'white',
-                  bgcolor: showSwitches ? (isDarkMode ? 'rgba(41,182,246,0.18)' : '#e0f2fe') : (isDarkMode ? '#101B2D' : 'white'),
+                  bgcolor: showSwitches
+                    ? isDarkMode
+                      ? 'rgba(41,182,246,0.18)'
+                      : '#e0f2fe'
+                    : isDarkMode
+                    ? '#101B2D'
+                    : 'white',
                   boxShadow: 2,
                   '&:hover': { boxShadow: '0 0 10px 2px #3b82f6' },
                 }}
@@ -3131,27 +3355,49 @@ const PortNavigationApp = () => {
               </IconButton>
             </Tooltip>
 
-            <Tooltip title={showPrinters ? "Show Buildings" : "Show Printers"} arrow>
+            <Tooltip title={showPrinters ? 'Show Buildings' : 'Show Printers'} arrow>
               <IconButton
                 onClick={togglePrinters}
                 sx={{
                   // bgcolor: showPrinters ? '#e0f2fe' : 'white',
-                  bgcolor: showPrinters ? (isDarkMode ? 'rgba(41,182,246,0.18)' : '#e0f2fe') : (isDarkMode ? '#101B2D' : 'white'),
+                  bgcolor: showPrinters
+                    ? isDarkMode
+                      ? 'rgba(41,182,246,0.18)'
+                      : '#e0f2fe'
+                    : isDarkMode
+                    ? '#101B2D'
+                    : 'white',
                   boxShadow: 2,
                   '&:hover': { boxShadow: '0 0 10px 2px #3b82f6' },
                 }}
               >
                 {/* <Print sx={{ color: showPrinters ? '#1976d2' : '#424242' }} /> */}
-                <Print sx={{ color: showPrinters ? (isDarkMode ? '#29B6F6' : '#1976d2') : (isDarkMode ? '#A9BBD4' : '#424242') }} />
+                <Print
+                  sx={{
+                    color: showPrinters
+                      ? isDarkMode
+                        ? '#29B6F6'
+                        : '#1976d2'
+                      : isDarkMode
+                      ? '#A9BBD4'
+                      : '#424242',
+                  }}
+                />
               </IconButton>
             </Tooltip>
 
-            <Tooltip title={showUps ? "Show Buildings" : "Show UPS"} arrow>
+            <Tooltip title={showUps ? 'Show Buildings' : 'Show UPS'} arrow>
               <IconButton
                 onClick={toggleUps}
                 sx={{
                   // bgcolor: showUps ? '#e0f2fe' : 'white',
-                  bgcolor: showUps ? (isDarkMode ? 'rgba(41,182,246,0.18)' : '#e0f2fe') : (isDarkMode ? '#101B2D' : 'white'),
+                  bgcolor: showUps
+                    ? isDarkMode
+                      ? 'rgba(41,182,246,0.18)'
+                      : '#e0f2fe'
+                    : isDarkMode
+                    ? '#101B2D'
+                    : 'white',
                   boxShadow: 2,
                   '&:hover': { boxShadow: '0 0 10px 2px #3b82f6' },
                 }}
@@ -3165,7 +3411,13 @@ const PortNavigationApp = () => {
                     height: 24,
                     filter: showUps ? 'none' : 'grayscale(100%)',
                     // bgcolor: showPrinters ? '#e0f2fe' : 'white',
-                    bgcolor: showPrinters ? (isDarkMode ? 'rgba(41,182,246,0.18)' : '#e0f2fe') : (isDarkMode ? '#101B2D' : 'white'),
+                    bgcolor: showPrinters
+                      ? isDarkMode
+                        ? 'rgba(41,182,246,0.18)'
+                        : '#e0f2fe'
+                      : isDarkMode
+                      ? '#101B2D'
+                      : 'white',
                   }}
                 />
               </IconButton>
@@ -3181,7 +3433,9 @@ const PortNavigationApp = () => {
               right: 0,
               bottom: 0,
               // background: 'linear-gradient(135deg, #1976d2 0%, #42a5f5 50%, #1976d2 100%)',
-              background: isDarkMode ? 'linear-gradient(135deg, #0B4A63 0%, #29B6F6 50%, #0B4A63 100%)' : 'linear-gradient(135deg, #1976d2 0%, #42a5f5 50%, #1976d2 100%)',
+              background: isDarkMode
+                ? 'linear-gradient(135deg, #0B4A63 0%, #29B6F6 50%, #0B4A63 100%)'
+                : 'linear-gradient(135deg, #1976d2 0%, #42a5f5 50%, #1976d2 100%)',
               opacity: 0.15,
             }}
           />
@@ -3205,7 +3459,8 @@ const PortNavigationApp = () => {
                       transform: 'translate(-50%, -50%)',
                       zIndex: isSelected
                         ? 40
-                        : locationPingStatus[dock.id] === 'down' || locationPingStatus[dock.id] === 'partial'
+                        : locationPingStatus[dock.id] === 'down' ||
+                          locationPingStatus[dock.id] === 'partial'
                         ? 30
                         : 10,
                       display: 'flex',
@@ -3235,7 +3490,11 @@ const PortNavigationApp = () => {
                           alignItems: 'center',
                           gap: '6px',
                           transition: 'all 0.3s ease',
-                          zIndex: locationPingStatus[dock.id] === 'down' || locationPingStatus[dock.id] === 'partial' ? 50 : 25,
+                          zIndex:
+                            locationPingStatus[dock.id] === 'down' ||
+                            locationPingStatus[dock.id] === 'partial'
+                              ? 50
+                              : 25,
                           '&::after': {
                             content: '""',
                             position: 'absolute',
@@ -3245,7 +3504,7 @@ const PortNavigationApp = () => {
                             borderWidth: '4px',
                             borderStyle: 'solid',
                             borderColor: '#1e293b transparent transparent transparent',
-                          }
+                          },
                         }}
                       >
                         {stats.activeCount === 0 ? (
@@ -3255,7 +3514,9 @@ const PortNavigationApp = () => {
                         ) : (
                           <Wifi size={13} color="#4ade80" />
                         )}
-                        <span>{inactiveCount} / {stats.totalCount}</span>
+                        <span>
+                          {inactiveCount} / {stats.totalCount}
+                        </span>
                       </Box>
                     )}
 
@@ -3263,7 +3524,11 @@ const PortNavigationApp = () => {
                     <Tooltip
                       title={
                         <Box sx={{ p: 1 }}>
-                          <Typography variant="subtitle2" fontWeight="bold" sx={{ color: '#fff', mb: 0.5 }}>
+                          <Typography
+                            variant="subtitle2"
+                            fontWeight="bold"
+                            sx={{ color: '#fff', mb: 0.5 }}
+                          >
                             {dock.name}
                           </Typography>
                           {dock.description && (
@@ -3280,8 +3545,20 @@ const PortNavigationApp = () => {
                           <Typography variant="body2" sx={{ color: '#ef4444', mb: 0.5 }}>
                             Inactive: {inactiveCount}
                           </Typography>
-                          <Tooltip title={renderOtherBreakdownTooltip(stats.otherBreakdown)} arrow placement="right">
-                            <Typography variant="body2" sx={{ color: '#9ca3af', mb: 0.5, cursor: 'pointer', '&:hover': { textDecoration: 'underline' } }}>
+                          <Tooltip
+                            title={renderOtherBreakdownTooltip(stats.otherBreakdown)}
+                            arrow
+                            placement="right"
+                          >
+                            <Typography
+                              variant="body2"
+                              sx={{
+                                color: '#9ca3af',
+                                mb: 0.5,
+                                cursor: 'pointer',
+                                '&:hover': { textDecoration: 'underline' },
+                              }}
+                            >
                               Other: {stats.otherCount}
                             </Typography>
                           </Tooltip>
@@ -3323,17 +3600,17 @@ const PortNavigationApp = () => {
                           transform: isSelected
                             ? 'scale(1.4)'
                             : isHovered
-                              ? 'scale(1.2)'
-                              : 'scale(1)',
+                            ? 'scale(1.2)'
+                            : 'scale(1)',
                           boxShadow: isHovered
                             ? '0 0 12px 14px rgba(25, 118, 210, 0.4)'
                             : isSelected
-                              ? '0 4px 16px rgba(0,0,0,0.4)'
-                              : locationPingStatus[dock.id] === 'down'
-                                ? '0 0 8px 4px rgba(244, 67, 54, 0.5)'
-                                : locationPingStatus[dock.id] === 'partial'
-                                  ? '0 0 8px 4px rgba(245, 158, 11, 0.5)'
-                                  : '0 2px 8px rgba(0,0,0,0.3)',
+                            ? '0 4px 16px rgba(0,0,0,0.4)'
+                            : locationPingStatus[dock.id] === 'down'
+                            ? '0 0 8px 4px rgba(244, 67, 54, 0.5)'
+                            : locationPingStatus[dock.id] === 'partial'
+                            ? '0 0 8px 4px rgba(245, 158, 11, 0.5)'
+                            : '0 2px 8px rgba(0,0,0,0.3)',
                           transition: 'all 0.3s ease',
                           cursor: 'pointer',
                           '@keyframes pulseRed': {
@@ -3469,7 +3746,7 @@ const PortNavigationApp = () => {
                       sx={{
                         color: '#fff',
                         // backgroundColor: isHovered ? '#f44336' : '#1976d2',
-                        backgroundColor: isHovered ? '#f44336' : (isDarkMode ? '#29B6F6' : '#1976d2'),
+                        backgroundColor: isHovered ? '#f44336' : isDarkMode ? '#29B6F6' : '#1976d2',
                         position: 'absolute',
                         left: printer.x,
                         top: printer.y,
@@ -3553,7 +3830,7 @@ const PortNavigationApp = () => {
                         style={{
                           width: 20,
                           height: 20,
-                          filter: showUps ? 'none' : 'grayscale(100%)'
+                          filter: showUps ? 'none' : 'grayscale(100%)',
                         }}
                       />
                     </Fab>
@@ -3595,7 +3872,7 @@ const PortNavigationApp = () => {
           ))}
 
           {/* Selected item info */}
-          {(selectedDock && !showSwitches && !showPrinters && !showUps) && (
+          {selectedDock && !showSwitches && !showPrinters && !showUps && (
             <Box
               sx={{
                 position: 'absolute',
@@ -3622,8 +3899,10 @@ const PortNavigationApp = () => {
                       ? '#b45309'
                       : locationPingStatus[selectedDock.id] === 'up'
                       ? '#2e7d32'
-                      // : '#1976d2',
-                      : (isDarkMode ? '#29B6F6' : '#1976d2'),
+                      : // : '#1976d2',
+                      isDarkMode
+                      ? '#29B6F6'
+                      : '#1976d2',
                 }}
               >
                 {selectedDock.name}
@@ -3632,100 +3911,103 @@ const PortNavigationApp = () => {
           )}
 
           {/* Connection Line - DTS to Server Room */}
-          {!showSwitches && !showPrinters && !showUps && (() => {
-            const dtsDock = docks.find((d) => d.id === 'DTS');
-            const mainServer = staticServers.find((s) => s.id === 'server1');
+          {!showSwitches &&
+            !showPrinters &&
+            !showUps &&
+            (() => {
+              const dtsDock = docks.find((d) => d.id === 'DTS');
+              const mainServer = staticServers.find((s) => s.id === 'server1');
 
-            if (!dtsDock || !mainServer) return null;
+              if (!dtsDock || !mainServer) return null;
 
-            // Convert percentage strings to numbers for calculation
-            const parsePercentage = (str) => parseFloat(str) / 100;
+              // Convert percentage strings to numbers for calculation
+              const parsePercentage = (str) => parseFloat(str) / 100;
 
-            const x1 = parsePercentage(dtsDock.x);
-            const y1 = parsePercentage(dtsDock.y);
-            const x2 = parsePercentage(mainServer.left);
-            const y2 = parsePercentage(mainServer.top);
+              const x1 = parsePercentage(dtsDock.x);
+              const y1 = parsePercentage(dtsDock.y);
+              const x2 = parsePercentage(mainServer.left);
+              const y2 = parsePercentage(mainServer.top);
 
-            return (
-              <svg
-                style={{
-                  position: 'absolute',
-                  width: '100%',
-                  height: '100%',
-                  top: 0,
-                  left: 0,
-                  pointerEvents: 'none',
-                  zIndex: 22,
-                }}
-              >
-                <defs>
-                  <filter id="glow">
-                    <feGaussianBlur stdDeviation="2" result="coloredBlur" />
-                    <feMerge>
-                      <feMergeNode in="coloredBlur" />
-                      <feMergeNode in="SourceGraphic" />
-                    </feMerge>
-                  </filter>
-
-                  <marker
-                    id="arrowhead"
-                    markerWidth="10"
-                    markerHeight="10"
-                    refX="9"
-                    refY="5"
-                    orient="auto"
-                  >
-                    <path d="M2,2 L8,5 L2,8 Z" fill="#1976d2" />
-                  </marker>
-                </defs>
-
-                {/* Glow effect line */}
-                <line
-                  x1={`${x1 * 100}%`}
-                  y1={`${y1 * 100}%`}
-                  x2={`${x2 * 100}%`}
-                  y2={`${y2 * 100}%`}
-                  // stroke="#2196f3"
-                  stroke={isDarkMode ? "#29B6F6" : "#2196f3"}
-                  strokeWidth="4"
-                  strokeDasharray="8,8"
-                  filter="url(#glow)"
-                  opacity="0.6"
-                />
-
-                {/* Main dotted line */}
-                <line
-                  x1={`${x1 * 100}%`}
-                  y1={`${y1 * 100}%`}
-                  x2={`${x2 * 100}%`}
-                  y2={`${y2 * 100}%`}
-                  stroke="#1976d2"
-                  strokeWidth="2.5"
-                  strokeDasharray="6,6"
-                  markerEnd="url(#arrowhead)"
-                />
-
-                {/* Animated dashed line */}
-                <line
-                  x1={`${x1 * 100}%`}
-                  y1={`${y1 * 100}%`}
-                  x2={`${x2 * 100}%`}
-                  y2={`${y2 * 100}%`}
-                  stroke="white"
-                  strokeWidth="1"
-                  strokeDasharray="4,12"
-                  opacity="0.5"
+              return (
+                <svg
+                  style={{
+                    position: 'absolute',
+                    width: '100%',
+                    height: '100%',
+                    top: 0,
+                    left: 0,
+                    pointerEvents: 'none',
+                    zIndex: 22,
+                  }}
                 >
-                  <animate
-                    attributeName="stroke-dashoffset"
-                    values="0;16"
-                    dur="1s"
-                    repeatCount="indefinite"
+                  <defs>
+                    <filter id="glow">
+                      <feGaussianBlur stdDeviation="2" result="coloredBlur" />
+                      <feMerge>
+                        <feMergeNode in="coloredBlur" />
+                        <feMergeNode in="SourceGraphic" />
+                      </feMerge>
+                    </filter>
+
+                    <marker
+                      id="arrowhead"
+                      markerWidth="10"
+                      markerHeight="10"
+                      refX="9"
+                      refY="5"
+                      orient="auto"
+                    >
+                      <path d="M2,2 L8,5 L2,8 Z" fill="#1976d2" />
+                    </marker>
+                  </defs>
+
+                  {/* Glow effect line */}
+                  <line
+                    x1={`${x1 * 100}%`}
+                    y1={`${y1 * 100}%`}
+                    x2={`${x2 * 100}%`}
+                    y2={`${y2 * 100}%`}
+                    // stroke="#2196f3"
+                    stroke={isDarkMode ? '#29B6F6' : '#2196f3'}
+                    strokeWidth="4"
+                    strokeDasharray="8,8"
+                    filter="url(#glow)"
+                    opacity="0.6"
                   />
-                </line>
-              </svg>
-            );
-          })()}
+
+                  {/* Main dotted line */}
+                  <line
+                    x1={`${x1 * 100}%`}
+                    y1={`${y1 * 100}%`}
+                    x2={`${x2 * 100}%`}
+                    y2={`${y2 * 100}%`}
+                    stroke="#1976d2"
+                    strokeWidth="2.5"
+                    strokeDasharray="6,6"
+                    markerEnd="url(#arrowhead)"
+                  />
+
+                  {/* Animated dashed line */}
+                  <line
+                    x1={`${x1 * 100}%`}
+                    y1={`${y1 * 100}%`}
+                    x2={`${x2 * 100}%`}
+                    y2={`${y2 * 100}%`}
+                    stroke="white"
+                    strokeWidth="1"
+                    strokeDasharray="4,12"
+                    opacity="0.5"
+                  >
+                    <animate
+                      attributeName="stroke-dashoffset"
+                      values="0;16"
+                      dur="1s"
+                      repeatCount="indefinite"
+                    />
+                  </line>
+                </svg>
+              );
+            })()}
         </Box>
 
         {/* Network Diagram Dialog */}
@@ -3742,7 +4024,9 @@ const PortNavigationApp = () => {
   };
 
   const renderFloorsView = () => {
-    const buildingSectors = allSectorsData.filter((sector) => sector.Build_Code === selectedDock?.id);
+    const buildingSectors = allSectorsData.filter(
+      (sector) => sector.Build_Code === selectedDock?.id,
+    );
     const floorMap = buildingSectors.reduce((acc, sector) => {
       const key = sector.Flo_No;
 
@@ -3761,7 +4045,9 @@ const PortNavigationApp = () => {
       }
 
       acc[key].ComputerCount += Number(sector.ComputerCount || 0);
-      acc[key].ActiveCount += Number(sector.ActiveCount !== undefined ? sector.ActiveCount : (sector.ComputerCount || 0));
+      acc[key].ActiveCount += Number(
+        sector.ActiveCount !== undefined ? sector.ActiveCount : sector.ComputerCount || 0,
+      );
       acc[key].DownCount += Number(sector.DownCount || 0);
       acc[key].OtherCount += Number(sector.OtherCount || 0);
       if (!acc[key].OtherBreakdown) {
@@ -3778,7 +4064,8 @@ const PortNavigationApp = () => {
       }
       if (sector.OtherBreakdown) {
         Object.keys(sector.OtherBreakdown).forEach((bKey) => {
-          acc[key].OtherBreakdown[bKey] = (acc[key].OtherBreakdown[bKey] || 0) + Number(sector.OtherBreakdown[bKey] || 0);
+          acc[key].OtherBreakdown[bKey] =
+            (acc[key].OtherBreakdown[bKey] || 0) + Number(sector.OtherBreakdown[bKey] || 0);
         });
       }
       acc[key].sectors.push(sector);
@@ -3796,7 +4083,9 @@ const PortNavigationApp = () => {
           minHeight: '100vh',
           p: 4,
           // background: 'linear-gradient(to bottom right, #1e293b, #1e40af)',
-          background: isDarkMode ? 'linear-gradient(to bottom right, #0D1526, #123253)' : 'linear-gradient(to bottom right, #1e293b, #1e40af)',
+          background: isDarkMode
+            ? 'linear-gradient(to bottom right, #0D1526, #123253)'
+            : 'linear-gradient(to bottom right, #1e293b, #1e40af)',
         }}
       >
         <Box sx={{ maxWidth: '1400px', mx: 'auto' }}>
@@ -3912,19 +4201,21 @@ const PortNavigationApp = () => {
                             fontWeight: 'bold',
                           }}
                         >
-                          {(floor.Flo_Code === '0' || isNaN(floor.Flo_Code)) ? 'G' : floor.Flo_Code}
+                          {floor.Flo_Code === '0' || isNaN(floor.Flo_Code) ? 'G' : floor.Flo_Code}
                         </Box>
                       </Box>
 
                       <Typography variant="h6" align="center" color="white" gutterBottom>
-                        {(floor.DisplayName === '0' || /^[A-Za-z]/.test(floor.DisplayName)) ? 'Ground Floor' : floor.DisplayName}
+                        {floor.DisplayName === '0' || /^[A-Za-z]/.test(floor.DisplayName)
+                          ? 'Ground Floor'
+                          : floor.DisplayName}
                       </Typography>
 
                       {/* Counts */}
                       <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                           {/* <Monitor size={16} color="#93c5fd" /> */}
-                          <Monitor size={16} color={isDarkMode ? "#67D9F5" : "#93c5fd"} />
+                          <Monitor size={16} color={isDarkMode ? '#67D9F5' : '#93c5fd'} />
                           <Typography variant="body2" color="white">
                             Total PCs
                           </Typography>
@@ -3958,7 +4249,11 @@ const PortNavigationApp = () => {
                         </Typography>
                       </Box>
 
-                      <Tooltip title={renderOtherBreakdownTooltip(floor.OtherBreakdown)} arrow placement="top">
+                      <Tooltip
+                        title={renderOtherBreakdownTooltip(floor.OtherBreakdown)}
+                        arrow
+                        placement="top"
+                      >
                         <Box
                           sx={{
                             display: 'flex',
@@ -4016,7 +4311,7 @@ const PortNavigationApp = () => {
     const filteredSectors = allSectorsData.filter(
       (sector) =>
         sector.Build_Code === selectedDock?.id &&
-        sector.Flo_No.toString() === selectedFloor?.Flo_No.toString()
+        sector.Flo_No.toString() === selectedFloor?.Flo_No.toString(),
     );
 
     return (
@@ -4025,7 +4320,9 @@ const PortNavigationApp = () => {
           minHeight: '100vh',
           p: 2,
           // background: 'linear-gradient(to bottom right, #1e293b, #1e40af)',
-          background: isDarkMode ? 'linear-gradient(to bottom right, #0D1526, #123253)' : 'linear-gradient(to bottom right, #1e293b, #1e40af)',
+          background: isDarkMode
+            ? 'linear-gradient(to bottom right, #0D1526, #123253)'
+            : 'linear-gradient(to bottom right, #1e293b, #1e40af)',
           overflow: 'hidden',
         }}
       >
@@ -4075,13 +4372,22 @@ const PortNavigationApp = () => {
           <Grid container spacing={2}>
             {filteredSectors.map((sector) => {
               const totalCount = Number(sector.ComputerCount || 0);
-              const activeCount = Number(sector.ActiveCount !== undefined ? sector.ActiveCount : (sector.ComputerCount || 0));
+              const activeCount = Number(
+                sector.ActiveCount !== undefined ? sector.ActiveCount : sector.ComputerCount || 0,
+              );
               const inactiveCount = Number(sector.DownCount || 0);
               const otherCount = Number(sector.OtherCount || 0);
               const cardStyles = getCardStatusStyles(totalCount, activeCount, inactiveCount);
 
               return (
-                <Grid item xs={12} sm={6} md={4} lg={3} key={`${sector.Flo_No}-${sector.Cat_CodeB}`}>
+                <Grid
+                  item
+                  xs={12}
+                  sm={6}
+                  md={4}
+                  lg={3}
+                  key={`${sector.Flo_No}-${sector.Cat_CodeB}`}
+                >
                   <Card
                     onClick={() => handleSectorClick(sector)}
                     sx={{
@@ -4125,7 +4431,14 @@ const PortNavigationApp = () => {
                         </Box>
                       </Box>
 
-                      <Typography variant="subtitle1" align="center" color="white" fontWeight="bold" gutterBottom sx={{ mb: 1.5, fontSize: '0.95rem' }}>
+                      <Typography
+                        variant="subtitle1"
+                        align="center"
+                        color="white"
+                        fontWeight="bold"
+                        gutterBottom
+                        sx={{ mb: 1.5, fontSize: '0.95rem' }}
+                      >
                         {sector.Flo_Name}
                       </Typography>
 
@@ -4133,7 +4446,7 @@ const PortNavigationApp = () => {
                       <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.75 }}>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                           {/* <Monitor size={14} color="#93c5fd" /> */}
-                          <Monitor size={14} color={isDarkMode ? "#67D9F5" : "#93c5fd"} />
+                          <Monitor size={14} color={isDarkMode ? '#67D9F5' : '#93c5fd'} />
                           <Typography variant="body2" color="white" sx={{ fontSize: '0.8rem' }}>
                             Total PCs
                           </Typography>
@@ -4167,7 +4480,11 @@ const PortNavigationApp = () => {
                         </Typography>
                       </Box>
 
-                      <Tooltip title={renderOtherBreakdownTooltip(sector.OtherBreakdown)} arrow placement="top">
+                      <Tooltip
+                        title={renderOtherBreakdownTooltip(sector.OtherBreakdown)}
+                        arrow
+                        placement="top"
+                      >
                         <Box
                           sx={{
                             display: 'flex',
