@@ -1559,7 +1559,7 @@ const PortNavigationApp = () => {
   useEffect(() => {
     const fetchSectors = async () => {
       try {
-        const response = await fetch('http://10.0.13.48:8088/ICTDevice/GetHeadBulid', {
+        const response = await fetch('https://esystems.cdl.lk/backend/NOCOPS/ICTDevice/GetHeadBulid', {
           method: 'GET',
           headers: {
             Accept: 'application/json',
@@ -1643,7 +1643,7 @@ const PortNavigationApp = () => {
 
             try {
               const devResponse = await fetch(
-                `http://10.0.13.48:8088/ICTDevice/GetComDetails?loccode=${sector.Flo_No}&catcodea=${sector.Cat_CodeB}`,
+                `https://esystems.cdl.lk/backend/NOCOPS/ICTDevice/GetComDetails?loccode=${sector.Flo_No}&catcodea=${sector.Cat_CodeB}`,
                 { method: 'GET', headers: { Accept: 'application/json' } }
               );
 
@@ -2402,7 +2402,7 @@ const PortNavigationApp = () => {
 
     try {
       const response = await fetch(
-        `http://10.0.13.48:8088/ICTDevice/GetComDetails?loccode=${sector.Flo_No}&catcodea=${sector.Cat_CodeB}`,
+        `https://esystems.cdl.lk/backend/NOCOPS/ICTDevice/GetComDetails?loccode=${sector.Flo_No}&catcodea=${sector.Cat_CodeB}`,
         {
           method: 'GET',
           headers: { Accept: 'application/json' },

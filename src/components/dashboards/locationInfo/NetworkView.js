@@ -593,7 +593,7 @@ const NetworkView = ({
       try {
         // Fetch devices for this sector
         const res = await fetch(
-          `http://10.0.13.48:8088/ICTDevice/GetComDetails?loccode=${selectedSector.Flo_No}&catcodea=${selectedSector.Cat_CodeB}`,
+          `https://esystems.cdl.lk/backend/NOCOPS/ICTDevice/GetComDetails?loccode=${selectedSector.Flo_No}&catcodea=${selectedSector.Cat_CodeB}`,
         );
         const data = await res.json();
         const devices = data.ResultSet || [];
@@ -653,7 +653,7 @@ const NetworkView = ({
 
     try {
       const response = await fetch(
-        `http://10.0.13.48:8088/ICTDevice/GetMapImg?Catcode=${selectedSector.Cat_CodeB}`,
+        `https://esystems.cdl.lk/backend/NOCOPS/ICTDevice/GetMapImg?Catcode=${selectedSector.Cat_CodeB}`,
         // `http://localhost:51324/ICTDevice/GetMapImg?Catcode=${selectedSector.Cat_CodeB}`,
       );
 
